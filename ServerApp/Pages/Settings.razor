@@ -1,0 +1,232 @@
+﻿@page "/settings"
+@inject NavigationManager NavManager
+@inject UserService userService
+<script src="https://kit.fontawesome.com/5f2ea077c5.js" crossorigin="anonymous"></script>
+<link href="_content/Syncfusion.Blazor/styles/bootstrap.css" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans" rel="stylesheet">
+<NavBar></NavBar>
+
+<div class="profile" style="height:465px;">
+    <h1>Settings</h1>
+    <ul style="margin-left:2rem; margin-top:20px">
+        <li style="float:left; margin-top:0px; margin-right:2rem;">
+            <div>
+                <h2>Set intervals</h2>
+                <p style="float:left;width: 100px;">Deviation</p>
+                <input type="number" min="0" style="width:100px; right: 1rem; color:@deviationState" placeholder="@revertState.deviation.ToString() day(s)" @onchange="(ChangeEventArgs args) => RandomChanged(args)" />
+
+                @foreach(var (interval, index) in User.intervals.WithIndex())
+                {   
+                    <div>
+                        <p style="float:left;width: 100px;">Interval @(index + 1)</p>
+                        <input type="number" min="1" style="width:100px; right: 1rem; color:@delayStates[index]" placeholder="@delays[index] day(s)" @onchange="(ChangeEventArgs args) => DelayChanged(args, index)" />
+                        <input type="number" min="1" style="width:100px; right: 1rem; color:@durationStates[index]" placeholder="@durations[index] min(s)" @onchange="(ChangeEventArgs args) => DurationChanged(args, index)" />
+                        <p class="delSub" @onclick="() => RemoveInterval(interval)">⨉</p>
+                    </div>
+                }
+                <div><p style="color:@addIntervalColour; text-decoration:underline; cursor:pointer" @onclick="AddInterval">+ Add interval</p></div>
+            </div>
+        </li>
+        <li>
+            <div style="width: fit-content;display: inline-block;">
+                <h2>Subjects</h2>
+                @foreach (var (subject, index) in User.subjects.WithIndex())
+                {
+                    <div>
+                        <input type="text" maxlength="20" style="float:left; width: 200px; border:none; color:@subjectStates[index]" placeholder="@subjects[index]" @onchange="(ChangeEventArgs args) => updateSubject(args, subject, index)" @oninput='(ChangeEventArgs args) => {subjectStates[index] = !User.subjects.Select(x => x.name).Contains(args.Value.ToString()) ? ErrorState.Clear : "red"; }'>
+                        <input type="color" @bind-value="@subject.colour" class="cPick" style="background-color:@subject.colour" @oninput="settingChanged">
+                        <p class="delSub" @onclick="() => removeSubject(subject)">⨉</p></div>
+
+                }
+                <div><p style="color:@addSubjectColour; text-decoration:underline; cursor:pointer" @onclick="AddSubject">+ Add Subject</p></div>
+            </div>
+        </li>
+    </ul>
+    <div style="width:730px;bottom: 380px;right: 580px;position: absolute;">
+        <button class="delacc" @onclick="deleteAccount">Delete Account</button>
+
+        <button class="logIn" @onclick="updateUser" style="font-size: 1rem; width: fit-content;margin-top:1rem; background-color:@saveColour; border-color:@saveColour">Save</button>
+        <button class="signUp" @onclick="Cancel" style="font-size: 1rem;width: fit-content;margin-right: 1rem;margin-top:1rem; border-width:0.2rem; color:@saveColour; border-color:@saveColour">Cancel</button>
+    </div>
+</div>
+
+@code {
+    List<int> delays = new List<int>();
+    List<int> durations = new List<int>();
+    List<string> subjects = new List<string>();
+    List<string> subjectStates = new List<string>();
+    List<string> delayStates = new List<string>();
+    List<string> durationStates = new List<string>();
+    string deviationState = ErrorState.Clear;
+    UserModel revertState;
+    string addSubjectColour = "#987acd";
+    string addIntervalColour = "#987acd";
+    string saveColour = "#a9b7b8";
+
+    public void deleteAccount()
+    {
+        userService.DeleteUser();
+        NavManager.NavigateTo("");
+    }
+    public void AddSubject()
+    {
+        if(User.subjects.Count() < 6)
+        {
+            User.subjects.Add(new Subject("New Subject", "#000000"));
+            subjects.Add("New Subject");
+            settingChanged();
+        }
+        if (User.subjects.Count() == 6)
+            addSubjectColour = "#a9b7b8";
+    }
+
+    public void updateSubject(ChangeEventArgs args, Subject subject, int index)
+    {
+        if (args.Value.ToString().Length > 0)
+        {
+            if (!User.subjects.Select(x => x.name).Contains(args.Value.ToString())) {
+                settingChanged();
+                subject.name = args.Value.ToString();
+            }
+            else
+            {
+                subject.name = subjects[index];
+                saveColour = "#a9b7b8";
+
+            } 
+        }
+
+    }
+
+    public void AddInterval()
+    {
+        settingChanged();
+        if (User.intervals.Count() < 6)
+        {
+            User.intervals.Add(new Interval(28, 5));
+            delays.Add(28);
+            durations.Add(5);
+            delayStates.Add(ErrorState.Clear);
+            durationStates.Add(ErrorState.Clear);
+        }
+        if (User.intervals.Count() == 6)
+            addIntervalColour = "#a9b7b8";
+    }
+
+    public void RemoveInterval(Interval interval)
+    {
+        settingChanged();
+        User.intervals.Remove(interval);
+        delayStates.RemoveAt(delays.FindIndex(x => x == interval.delay));
+        delays.Remove(interval.delay);
+        durationStates.RemoveAt(durations.FindIndex(x => x == interval.duration));
+        durations.Remove(interval.duration);
+        addIntervalColour = "#987acd";
+    }
+
+    public void DelayChanged(ChangeEventArgs args, int index)
+    {
+        if (Int32.Parse((string)args.Value) >= 0)
+        {            
+            User.intervals[index].delay = Int32.Parse((string)args.Value);
+            settingChanged();
+        }
+        else
+        {
+            saveColour = "#a9b7b8";
+        }
+        delayStates[index] = Int32.Parse((string)args.Value) >= 0 ? ErrorState.Clear : "red";
+    }
+
+    public void RandomChanged(ChangeEventArgs args)
+    {
+        if (Int32.Parse((string)args.Value) >= 0)
+        {            
+            User.deviation = Int32.Parse((string)args.Value);
+            settingChanged();
+        }
+        else
+        {
+            saveColour = "#a9b7b8";
+        }
+        deviationState = Int32.Parse((string)args.Value) >= 0 ? ErrorState.Clear : "red";
+    }
+
+    public void DurationChanged(ChangeEventArgs args, int index)
+    {
+        durationStates[index] = Int32.Parse((string)args.Value) >= 0 ? ErrorState.Clear : "red";
+        if (Int32.Parse((string)args.Value) >= 0)
+        {            
+            User.intervals[index].duration = Int32.Parse((string)args.Value);
+            settingChanged();
+        }
+        else
+        {
+            saveColour = "#a9b7b8";
+        }
+    }
+
+    public void removeSubject(Subject subject)
+    {
+        addSubjectColour = "#987acd";
+        settingChanged();
+        User.subjects.Remove(subject);
+        subjectStates.RemoveAt(subjects.FindIndex(x => x == subject.name));
+        subjects.Remove(subject.name);
+    }
+
+    public void settingChanged()
+    {
+        saveColour = "#987acd";
+    }
+
+    public void updateUser()
+    {
+        if (subjectStates.Contains("red"))
+            return;
+        if (delayStates.Contains("red"))
+            return;
+        if (durationStates.Contains("red"))
+            return;
+            if (deviationState == ("red"))
+            return;
+        userService.StoreUser(User.Model());
+        saveColour = "#a9b7b8";
+        revertState = User.Model();
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavManager.LocationChanged += LocationChanged;
+        revertState = User.Model();
+        delays.AddRange(User.intervals.Select(x => x.delay));
+        durations.AddRange(User.intervals.Select(x => x.duration));
+        subjects.AddRange(User.subjects.Select(x => x.name));
+        subjectStates.AddRange(User.subjects.Select(x => ErrorState.Clear));
+        delayStates.AddRange(User.subjects.Select(x => ErrorState.Clear));
+        durationStates.AddRange(User.subjects.Select(x => ErrorState.Clear));
+        if(User.intervals.Count() >= 6)
+        {
+            addIntervalColour = "#a9b7b8";
+        }
+        if (User.subjects.Count() >= 6)
+        {
+            addSubjectColour = "#a9b7b8";
+        }
+    }
+
+    void LocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        //Checks if there are unsaved changes to revert
+        if (saveColour != "#a9b7b8")
+            Cancel();
+        NavManager.LocationChanged -= LocationChanged;
+    }
+    public void Cancel()
+    {
+        saveColour = "#a9b7b8";
+        User.Generate(revertState);
+        // NavManager.NavigateTo("main");
+    }
+}

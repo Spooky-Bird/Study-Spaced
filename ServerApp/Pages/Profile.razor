@@ -1,0 +1,169 @@
+﻿@page "/profile"
+@using ServerApp.Services;
+@inject UserService userService
+@inject FileService fileService
+@inject NavigationManager NavManager
+
+<script src="https://kit.fontawesome.com/5f2ea077c5.js" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans" rel="stylesheet">
+<NavBar></NavBar>
+<div class="profile">
+    <h1>Profile</h1>
+    <ul>
+        <li style="float: left;    margin-right: 2rem;margin-top: 24px;margin-left: 1rem;">
+
+            <label for="file-upload" class="uploadImg" style="background-repeat: no-repeat; background-size: cover;     background-image: url(@User.pfpUrl);">
+            </label>
+            <InputFile style="display:none" OnChange="uploadImg" id="file-upload"><i class="fa-solid fa-user" style="color:#987acd; font-size:3rem;"></i></InputFile>
+            <p style="color: red;display: block;width: 100px;font-size: 0.8rem;">@imgErrorMsg</p>
+        </li>
+        <li>
+            <div style="float: left;margin-right: 2rem; margin-top: 10px;">
+                <p>Username</p>
+                <input type="text" style="width:200px" placeholder=@revertState.username @onchange="(ChangeEventArgs args) => {UserInput(args);}" maxlength="12" />
+                <p style="margin-top: 0.7rem;">Email</p>
+                <input type="email" style="width:250px; background-color:@emailError" placeholder=@revertState.email @onchange="(ChangeEventArgs args) => {EmailInput(args);}" @oninput="() => {emailError = ErrorState.Clear;}" maxlength="30" />
+            </div>
+            <div style="margin-top: 10px; float:left;">
+                <p>Change Password</p>
+                <input type="password" style="width:200px" @oninput="passChanged" @bind-value="@passInput"/>
+                <p style="margin-top:0.7rem;">Confirm Password</p>
+                <input type="password" style="width:200px; background-color:@passError" @oninput="passChanged" @onchange="(ChangeEventArgs args) => {passConfirm(args);}" />
+            </div>
+        </li>
+    </ul>
+    <button class="logIn" style="font-size: 1rem;margin-top: 218px;width: fit-content; padding:0.6rem; background-color:@saveColour; border-color:@saveColour" @onclick="updateUser">Save</button>
+    <button class="signUp" style="font-size: 1rem;margin-top: 90px;width: fit-content;margin-right: 1rem; border-width:0.2rem; color:@saveColour; border-color:@saveColour" @onclick="Cancel">Cancel</button>
+</div>
+
+@code {
+    UserModel revertState;
+    string revertPfp = "";
+    string fileName = "";
+    string contentType = "";
+    string passInput = "";
+    string saveColour = "#a9b7b8";
+    string emailError = ErrorState.Clear;
+    string passError = ErrorState.Clear;
+    string imgErrorMsg = "";
+    void settingsChanged()
+    {
+        saveColour = "#987acd";
+    }
+    public void updateUser()
+    {
+        if (saveColour == "#a9b7b8" || emailError == ErrorState.Error)
+            return;
+        if(passInput != "")
+            User.password = passInput;
+        if (fileName != "")
+            fileService.savePfp($@"wwwroot\TempFiles\{User.userId}\pfp\" + fileName, fileName, contentType);
+        userService.StoreUser(User.Model());
+        revertState = User.Model();
+        saveColour = "#a9b7b8";
+    }
+    public void passChanged(ChangeEventArgs args)
+    {
+        passError = ErrorState.Clear;
+        if(args.Value.ToString() == passInput)
+        {
+            settingsChanged();
+        }
+        else 
+            saveColour = "#a9b7b8";
+    }
+
+    public void passConfirm(ChangeEventArgs args)
+    {
+        if (args.Value.ToString() != passInput)
+            passError = ErrorState.Error;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        revertState = User.Model();
+        revertPfp = User.pfpUrl;
+        NavManager.LocationChanged += LocationChanged;
+    }
+
+    void LocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        //Checks if there are unsaved changes to revert
+        if (saveColour != "#a9b7b8")
+            Cancel();
+        NavManager.LocationChanged -= LocationChanged;
+    }
+
+    public void Cancel()
+    {
+        saveColour = "#a9b7b8";
+        imgErrorMsg = "";
+        if(fileName != "")
+            File.Delete($@"wwwroot\TempFiles\{User.userId}\pfp\{fileName}");
+        User.Generate(revertState);
+        User.pfpUrl = revertPfp;
+        fileName = "";
+        contentType = "";
+    }
+
+    public async void uploadImg(InputFileChangeEventArgs args ) {
+        string[] validFileTypes = { "png", "jpg", "jpeg", "webp", "gif", "svg", "tiff",  };
+        try
+        {
+            var file = args.File;
+            if (!validFileTypes.Contains(file.Name.Split(".")[^1]))
+            {
+                imgErrorMsg = "Please enter valid image file";
+                return;
+            }
+            else
+            {
+                imgErrorMsg = "";
+            }
+            var path = $@"wwwroot\TempFiles\{User.userId}\pfp\" + file.Name;
+            Directory.CreateDirectory($@"wwwroot\TempFiles\{User.userId}\pfp\");
+            FileStream filestream = new FileStream(path, FileMode.Create, FileAccess.Write);
+            await file.OpenReadStream(long.MaxValue).CopyToAsync(filestream);
+            filestream.Close();
+            User.pfpUrl = $@"'/TempFiles/{User.userId}/pfp/" + file.Name + "'";
+            fileName = file.Name;
+            contentType = file.ContentType;
+            settingsChanged();
+            StateHasChanged();
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+    public void EmailInput(ChangeEventArgs e) {
+        if (IsValidEmail(e.Value.ToString()))
+        {
+            User.email = e.Value.ToString();
+            settingsChanged(); 
+        }
+        else if (e.Value.ToString().Length > 0)
+            emailError = ErrorState.Error;
+    }
+
+
+    bool IsValidEmail(string email)
+    {
+        var emaiyl = new System.ComponentModel.DataAnnotations.EmailAddressAttribute();
+        return emaiyl.IsValid(email);
+    }
+    public void UserInput(ChangeEventArgs e)
+    {
+        if (e.Value.ToString().Length > 0)
+        {
+            User.username = e.Value.ToString();
+            settingsChanged();
+        }
+        else
+        {
+            saveColour = "#a9b7b8";
+            User.username = revertState.username;
+        }
+    }
+}

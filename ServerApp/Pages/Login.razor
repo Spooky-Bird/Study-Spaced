@@ -1,0 +1,164 @@
+﻿@page "/"
+@inject NavigationManager NavManager
+@inject UserService userService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<script src="https://kit.fontawesome.com/5f2ea077c5.js" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans" rel="stylesheet">
+@if(render)
+{
+	<div class="mainMeow">
+		@if (logInPage)
+		{
+			<h2 class="loginTitle">Log in</h2>
+		}
+		else
+		{
+			<h2 class="loginTitle">Sign up</h2>
+		}
+		<div class="inputs">
+			<p style="color:red;">@errorMsg</p>
+			<input class="username" type="text" placeholder="Username" @bind-value="username" @oninput="inputChanged" />
+			<div class="password">
+				<input @bind-value="password" @oninput="inputChanged" type="@pwordType" placeholder="Password" style="border:none; background-color:transparent; outline:none; font-size: 24px;" />
+				<button @onclick='@showPass' style="background-color:transparent; border:none"><i class='@icon'></i></button>
+			</div>
+		</div>
+		<div class="remember">
+			<input style="float: left; margin-top:5px; margin-right:6px; color:#987acd" type="checkbox" @bind="@remember">
+			<label for="rememberCheckBox">
+				<p style="color:#987acd; font-weight:bold;">Remember me?</p>
+			</label>
+
+		</div>
+		@if (logInPage)
+		{
+			<button @onclick="Authentication" class="logIn" style="display:@showLoginButton">Log In</button>
+			<button @onclick='@changeAuthScreen' class="signUp">Sign Up</button>
+		}
+		else
+		{
+			<button @onclick="Authentication" class="logIn">Sign Up</button>
+			<button style="background-color:transparent; outline:none; border:none; color:#987acd; font-size:1.3rem; font-weight:bold;" @onclick='@changeAuthScreen'>Back</button>
+
+		}
+
+	</div>
+}
+
+@code {
+	//Input variables
+	string errorMsg = "‌";
+	string username = "";
+	string password = "";
+	bool remember = false;
+
+	//Controls page state
+	bool render = false;
+	string title = "Login";
+	bool logInPage = true;
+	string showLoginButton = "block";
+	string signUpClass = "signUp";
+	string pwordType = "password";
+	string icon = "fa-regular fa-eye-slash";
+
+	//Toggles password visibility
+	void showPass()
+	{
+		if (pwordType == "password")
+		{
+			icon = "fa-regular fa-eye";
+			pwordType = "text";
+		}
+		else
+		{
+			pwordType = "password";
+			icon = "fa-regular fa-eye-slash";
+		}
+	}
+
+	//Toggles login and signup screens
+	void changeAuthScreen()
+	{
+		errorMsg = "‌";
+		logInPage = !logInPage;
+	}
+
+	//Handles user input and checks against database
+	public async void Authentication()
+	{
+		if (username.Length == 0 || password.Length == 0)
+		{
+			errorMsg = "Username and password are required";
+			return;
+		}
+		Auth authentication = new Auth(username, userService);
+		bool validLogin = authentication.validLogin(password);
+
+		//If signup
+		if(!logInPage)
+		{
+			//If account with same username + password exists
+			if(!validLogin)
+			{
+				//Signs user up and navigates to main page
+				createUser();
+				if (remember)
+					await localStorage.SetItemAsync("LoginId", User.userId);
+				NavManager.NavigateTo("main");
+				return;
+			}
+			//If account already exists
+			errorMsg = "Account already exists";
+		}
+		//If login
+		else
+		{
+			//if account with same username + password exists
+			if(validLogin)
+			{
+				//Transfers info from database to User object and navigates to main page
+				authentication.verfyUser(password);
+				if (remember)
+					await localStorage.SetItemAsync("LoginId", User.userId);
+				NavManager.NavigateTo("main");
+				return;
+			}
+			errorMsg = "Incorrect username or password";
+		}
+	}
+
+	//Gets input from ui entries and stores the information to the user database
+	public void createUser()
+	{
+		User.username = username;
+		User.password = password;
+		userService.StoreUser(User.Model());		
+	}
+
+	//Clears error message when user changes their inputs
+	public void inputChanged()
+	{
+		errorMsg = "‌";
+	}
+
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if(firstRender) {
+			bool keyExists = await localStorage.ContainKeyAsync("LoginId");
+			if (keyExists)
+			{
+				try{
+					string loginCookie = await localStorage.GetItemAsync<string>("LoginId");
+					userService.LoadUser(loginCookie);
+					NavManager.NavigateTo("main");
+					return;
+				}
+				catch {}
+			}
+			render = true;
+			StateHasChanged();
+		}
+	}
+}

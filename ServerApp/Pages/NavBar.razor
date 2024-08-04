@@ -1,0 +1,70 @@
+﻿@inject NavigationManager NavManager
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<header>
+    <button @onclick="navMain" class="title"><h1>Study</h1> <h1 style="color: #987acd">Spaced</h1></button>
+    <!--REPLACE WITH NAV BAR-->
+    @if (!NavManager.Uri.Contains("profile"))  {
+        <div style="width: 80px;height: 80px;float: right;margin-right: 94px; padding:15px">
+            <div @onclick="navProfile" style="border-radius:100px; width:50px; height:50px; background-image: url(@User.pfpUrl); background-repeat: no-repeat; background-size: cover; cursor:pointer"></div>
+        </div>
+    }
+    <!--  -->
+</header>
+<details>
+    <summary>
+        <div class="settingsButton"><i class="fa-solid fa-bars"></i></div>
+    </summary>
+    <div class="navBar">
+        <ul style="height:100%">
+            <li>
+                <button @onclick="navProfile">
+                    Profile
+                </button>
+                <hr />
+            </li>
+            <li>
+                <button @onclick="navSettings">
+                    Settings
+                </button>
+                <hr />
+            </li>
+        </ul>
+        <button @onclick="navLogIn" class="logOut">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Log out
+        </button>
+    </div>
+</details>
+
+@code {
+    public void navMain()
+    {
+        NavManager.NavigateTo("main");
+    }
+    public void navSettings()
+    {
+        NavManager.NavigateTo("settings");
+    }
+    public void navProfile()
+    {
+        NavManager.NavigateTo("profile");
+    }
+    public async Task navLogIn()
+    {
+        await localStorage.SetItemAsync("LoginId", "");
+        User.clear();
+        NavManager.NavigateTo("");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // if (!firstRender)
+        //     return;
+        if (User.userId == "")
+        {
+            NavManager.NavigateTo("");
+        }
+    }
+
+}
