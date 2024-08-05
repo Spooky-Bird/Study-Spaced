@@ -1,4 +1,10 @@
-﻿@page "/profile"
+﻿@***********************************************************************
+    Project: ServerApp
+    Module: Identitfy
+
+    Author: Simon Wunderlich
+*@
+@page "/profile"
 @using ServerApp.Services;
 @inject UserService userService
 @inject FileService fileService
@@ -46,25 +52,45 @@
     string emailError = ErrorState.Clear;
     string passError = ErrorState.Clear;
     string imgErrorMsg = "";
+
+    //Sets ui element's colours (save, cancel) to active state
     void settingsChanged()
     {
         saveColour = "#987acd";
     }
+
+    //Saves any changed information to database
     public void updateUser()
     {
-        if (saveColour == "#a9b7b8" || emailError == ErrorState.Error)
+        //Checks if any invalid inputs have been entered
+        if (saveColour == "#a9b7b8" || emailError == ErrorState.Error || passError == ErrorState.Error)
             return;
+        //Checks if password has been changed, if it has it applies it to the user object
         if(passInput != "")
             User.password = passInput;
+
+        //Checks if a valid pfp has been entered and saved to file, if it has, it is uploaded to an s3 bucket
         if (fileName != "")
             fileService.savePfp($@"wwwroot\TempFiles\{User.userId}\pfp\" + fileName, fileName, contentType);
+
+        //User object updated in db
         userService.StoreUser(User.Model());
+
+        //Updates revert state so it will revert to updated state on cancel
         revertState = User.Model();
+
+        //Greys out ui
         saveColour = "#a9b7b8";
     }
+
+    //Event handler for when input entered in confirm password field
+    //Run on each keypress
     public void passChanged(ChangeEventArgs args)
     {
+        //clears errors on input
         passError = ErrorState.Clear;
+
+        //sets save button to active state if password matches confirm password
         if(args.Value.ToString() == passInput)
         {
             settingsChanged();
@@ -73,44 +99,62 @@
             saveColour = "#a9b7b8";
     }
 
+    //Event handler for when text is entered into confirm password field
+    //Runs on complete
     public void passConfirm(ChangeEventArgs args)
     {
+        //Checks if passwords match
         if (args.Value.ToString() != passInput)
             passError = ErrorState.Error;
     }
 
+    //Runs on startup
+    //Defines revert states
     protected override async Task OnInitializedAsync()
     {
+        //Revert states are used to reset any changes the user makes if they click cancel or nav away
         revertState = User.Model();
         revertPfp = User.pfpUrl;
+
+        //Creates event listener to cancel changes on nav away
         NavManager.LocationChanged += LocationChanged;
     }
 
+    //Reverts any changed inputs on nav away
     void LocationChanged(object sender, LocationChangedEventArgs e)
     {
         //Checks if there are unsaved changes to revert
         if (saveColour != "#a9b7b8")
             Cancel();
+        //Unsubscribes from event
         NavManager.LocationChanged -= LocationChanged;
     }
 
+    //Reverts user's changes
     public void Cancel()
     {
+        //Reverts all input variables to basic states
         saveColour = "#a9b7b8";
         imgErrorMsg = "";
+        //Deletes temporary pfps
         if(fileName != "")
             File.Delete($@"wwwroot\TempFiles\{User.userId}\pfp\{fileName}");
+
+        //Revert changes on user object
         User.Generate(revertState);
         User.pfpUrl = revertPfp;
         fileName = "";
         contentType = "";
     }
 
+    //Event handler when file uploaded
     public async void uploadImg(InputFileChangeEventArgs args ) {
+        //List of valid image types
         string[] validFileTypes = { "png", "jpg", "jpeg", "webp", "gif", "svg", "tiff",  };
         try
         {
             var file = args.File;
+            //checks if file name contains an invalid file type
             if (!validFileTypes.Contains(file.Name.Split(".")[^1]))
             {
                 imgErrorMsg = "Please enter valid image file";
@@ -120,11 +164,18 @@
             {
                 imgErrorMsg = "";
             }
+            //creates path to store file
             var path = $@"wwwroot\TempFiles\{User.userId}\pfp\" + file.Name;
+
+            //Creates containing directory
             Directory.CreateDirectory($@"wwwroot\TempFiles\{User.userId}\pfp\");
+
+            //Saves pfp to path
             FileStream filestream = new FileStream(path, FileMode.Create, FileAccess.Write);
             await file.OpenReadStream(long.MaxValue).CopyToAsync(filestream);
             filestream.Close();
+
+            //Updates user pfp to user object
             User.pfpUrl = $@"'/TempFiles/{User.userId}/pfp/" + file.Name + "'";
             fileName = file.Name;
             contentType = file.ContentType;
@@ -137,24 +188,33 @@
             Console.WriteLine(ex.Message);
         }
     }
+
+    //Event handler for when email entered
     public void EmailInput(ChangeEventArgs e) {
+        //Determines if the input would be a valid
+        //Only checks syntax, not if someone actually own the email
         if (IsValidEmail(e.Value.ToString()))
         {
+            //Updates email files
             User.email = e.Value.ToString();
             settingsChanged(); 
         }
+        //If user has entered something, and it is invalid, throw error
         else if (e.Value.ToString().Length > 0)
             emailError = ErrorState.Error;
     }
 
-
+    //Checks if email is valid
     bool IsValidEmail(string email)
     {
         var emaiyl = new System.ComponentModel.DataAnnotations.EmailAddressAttribute();
         return emaiyl.IsValid(email);
     }
+
+    //Event handler when username changed
     public void UserInput(ChangeEventArgs e)
     {
+        //checks if input has been entered, if not, throw error
         if (e.Value.ToString().Length > 0)
         {
             User.username = e.Value.ToString();
