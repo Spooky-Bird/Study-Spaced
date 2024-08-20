@@ -8,45 +8,54 @@ namespace ServerApp.Services
     public class TaskController
     {
         //Dictates whether to show the task entry popup
-        public static bool displayTaskEntry = false;
+        public bool displayTaskEntry = false;
 
         //Dictates whether to show the task histery popup
-        public static bool displayTaskHistory = false;
+        public bool displayTaskHistory = false;
 
         //Dictates whether to show the task edit popup
-        public static bool displayTaskEdit = false;
+        public bool displayTaskEdit = false;
 
-        public static Topic currentTask = new Topic("", new Subject("NULL", "NULL"), 0, 0, "", new List<string>(), new List<string>());
+        public Topic currentTask = new Topic();
 
 
-        public static string name = "";
-        public static int difficulty = 0;
-        public static Subject selectedSubject = new Subject("NULL", "NULL");
-        public static string description = "";
-        public static List<Resource> taskResources = new List<Resource>();
-        public static Dictionary<string, string> files = new Dictionary<string, string>();
-        public static List<string> links = new List<string>();
-        public static string link = "";
+        public string name = "";
+        public int difficulty = 0;
+        public Subject selectedSubject = new Subject("NULL", "NULL");
+        public string description = "";
+        public List<Resource> taskResources = new List<Resource>();
+        public Dictionary<string, string> files = new Dictionary<string, string>();
+        public List<string> links = new List<string>();
+        public string link = "";
 
-        public TaskController() { }
+        User _currentUser;
+
+        public TaskController(User user)
+        {
+            _currentUser = user;
+            currentTask = new Topic("", new Subject("NULL", "NULL"), 0, 0, "", new List<string>(), new List<string>(), _currentUser);
+        }
 
         //Opens and closes the task entry popup
-        public static void toggleTask()
+        public void toggleTask()
         {
             displayTaskEntry = !displayTaskEntry;
-            currentTask = new Topic("", new Subject("NULL", "NULL"), 0, 0, "", new List<string>(), new List<string>());
+            currentTask = new Topic("", new Subject("NULL", "NULL"), 0, 0, "", new List<string>(), new List<string>(), _currentUser);
         }
 
         //Opens and closes the task history popup
-        public static void toggleHistory()
+        public void toggleHistory()
         {
             displayTaskHistory = !displayTaskHistory;
         }
 
         //Opens the task edit popup
-        public static void toggleEdit(Topic topic = null)
+        public void toggleEdit(Topic topic = null)
         {
+            //toggles display bool
             displayTaskEdit = !displayTaskEdit;
+
+            //if opening a topic, assign values to current task + variables
             if (topic != null)
             {
                 currentTask = topic;
@@ -58,115 +67,153 @@ namespace ServerApp.Services
             }
         }
 
-        public static async Task confirmEdit()
+        //When confirm clicked on edit page
+        //Updates info in database
+        public async Task confirmEdit()
         {
-            Topic topic = User.allTopics.Where(t => t.id == currentTask.id).First();
+            //gets topic by id
+            Topic topic = _currentUser.allTopics.Where(t => t.id == currentTask.id).First();
+
+            //overwrites topics variable 
             topic = currentTask;
+
+            //sets seleted subject from dropdown
             topic.subject = selectedSubject;
 
+            //sets difficulty indicator to have as many !s as in difficulty
             topic.difficultyIndicator = "";
             for (int i = 0; i < difficulty; i++)
             {
                 topic.difficultyIndicator += "!";
             }
 
+            //Updates topic not in due topic list
             if (topic.dueDate <= DateTime.UtcNow.AddHours(10))
             {
-                int index = User.topics.FindIndex(t => t.id == currentTask.id);
-                User.topics[index] = currentTask;
-                User.topics[index].subject = selectedSubject;
+                int index = _currentUser.topics.FindIndex(t => t.id == currentTask.id);
+                _currentUser.topics[index] = currentTask;
+                _currentUser.topics[index].subject = selectedSubject;
             }
 
-            FileService fileService = new FileService();
+            //Saves all uplodadeed
+            FileService fileService = new FileService(_currentUser);
             foreach (KeyValuePair<string, string> file in files)
             {
-                fileService.saveFile($"wwwroot/TempFiles/{User.userId}/{file.Key}", file.Key, file.Value);
-                string url = fileService.getUrl($@"{User.userId}/{file.Key}", "resource-storage-study-spaced").Result;
+                //Saves file to s3 database
+                fileService.saveFile($"wwwroot/TempFiles/{_currentUser.userId}/{file.Key}", file.Key, file.Value);
+
+                //gets file url to view file
+                string url = fileService.getUrl($@"{_currentUser.userId}/{file.Key}", "resource-storage-study-spaced").Result;
+
+                //Adds file to topic list
                 topic.files.Add(file.Key, url);
             }
 
-            TopicService topicService = new TopicService();
+            //Saves topic to database
+            TopicService topicService = new TopicService(_currentUser);
             topicService.StoreTopic(topic.Model(topic.dueDate.ToString("yyyy/MM/dd")));
+
+            //Resets all variables
             selectedSubject = new Subject("NULL", "NULL");
             links = new List<string>();
             files = new Dictionary<string, string>();
-            currentTask = new Topic("", new Subject("NULL", "NULL"), 0, 0, "", new List<string>(), new List<string>());
+            currentTask = new Topic("", new Subject("NULL", "NULL"), 0, 0, "", new List<string>(), new List<string>(), _currentUser);
         }
 
         //Takes all inputs from the ui and saves it to a topic object
-        public static void taskSubmitted()
+        public void taskSubmitted()
         {
-            Topic topic = new Topic(currentTask.name, selectedSubject, 0, currentTask.difficulty, currentTask.description, currentTask.files.Select(x => x.Key).ToList(), currentTask.links);
-            TopicService topicService = new TopicService();
-            string dueDate = DateTime.UtcNow.AddDays(calculateInterval(topic.repetitions, topic.difficulty)).AddHours(10).ToString("yyyy/MM/dd");
-            topicService.StoreTopic(topic.Model(dueDate));
+            //Creates new topic from inputted variables
+            Topic topic = new Topic(currentTask.name, selectedSubject, 0, currentTask.difficulty, currentTask.description, currentTask.files.Select(x => x.Key).ToList(), currentTask.links, _currentUser);
+            
+            //Sets the due dates
             topic.dueDate = DateTime.UtcNow.AddDays(calculateInterval(topic.repetitions, topic.difficulty)).AddHours(10);
-            User.allTopics.Add(topic);
+            string dueDate = topic.dueDate.ToString("yyyy/MM/dd");
 
-            FileService fileService = new FileService();
-            foreach(KeyValuePair<string, string> file in files)
+            //Saves topic to database
+            TopicService topicService = new TopicService(_currentUser);
+            topicService.StoreTopic(topic.Model(dueDate));
+
+            //Saves topic to topic list
+            _currentUser.allTopics.Add(topic);
+
+            //Saves uploaded files to s3 bucket
+            FileService fileService = new FileService(_currentUser);
+            foreach(KeyValuePair<string, string> file in currentTask.files)
             {
-                fileService.saveFile($"wwwroot/TempFiles/{User.userId}/{file.Key}", file.Key, file.Value);
+                //Saves file
+                fileService.saveFile($"wwwroot/TempFiles/{_currentUser.userId}/{file.Key}", file.Key, file.Value);
             }
+            //Deletes all temp files for current user
             try
             {
-                Directory.Delete(@$"wwwroot/TempFiles/{User.userId}/", true);
+                Directory.Delete(@$"wwwroot/TempFiles/{_currentUser.userId}/", true);
             }
             catch { }
+
+            //Clears input variables
             selectedSubject = new Subject("NULL", "NULL");
             links = new List<string>();
             files = new Dictionary<string, string>();
-            currentTask = new Topic("", new Subject("NULL", "NULL"), 0, 0, "", new List<string>(), new List<string>());
+            currentTask = new Topic("", new Subject("NULL", "NULL"), 0, 0, "", new List<string>(), new List<string>(), _currentUser);
 
         }
 
-        public static void taskCompleted(Topic topic)
+        //Runs when task is completed
+        public void taskCompleted(Topic topic)
         {
-            TopicService topicService = new TopicService();
+            //Increments repetitions 
             topic.repetitions++;
+
+            //Updates topic with updated values
+            TopicService topicService = new TopicService(_currentUser);
             string dueDate = DateTime.Now.AddDays(calculateInterval(topic.repetitions, topic.difficulty)).ToString("yyyy/MM/dd");
             topicService.StoreTopic(topic.Model(dueDate));
         }
 
         //Removes topic from topic list
-        public static void removeTask(Topic topic)
+        public void removeTask(Topic topic)
         {
-            User.topics.Remove(topic);
-            User.allTopics.Remove(topic);
-            TopicService topicService = new TopicService();
+            _currentUser.topics.Remove(topic);
+            _currentUser.allTopics.Remove(topic);
+            TopicService topicService = new TopicService(_currentUser);
             topicService.DeleteTopic(topic.id);
         }
 
-        public static void updateTask(Topic task)
+        public void updateTask(Topic task)
         {
-            TopicService topicService = new TopicService();
+            TopicService topicService = new TopicService(_currentUser);
             topicService.DeleteTopic(task.id);
             topicService.StoreTopic(task.Model());
         }
 
-        public static int calculateInterval(int repetitions, int difficulty)
+        public int calculateInterval(int repetitions, int difficulty)
         {
             Random rand = new Random();
             repetitions /= difficulty+1;
-            if (repetitions >= User.intervals.Count())
-                return Math.Abs(User.intervals[^1].delay + rand.Next(-User.deviation, 1 + User.deviation));
+            if (repetitions >= _currentUser.intervals.Count())
+                return Math.Abs(_currentUser.intervals[^1].delay + rand.Next(-_currentUser.deviation, 1 + _currentUser.deviation));
             if(repetitions > 1)
-                return Math.Abs(User.intervals[repetitions].delay + rand.Next(-User.deviation, 1 + User.deviation));
-            return User.intervals[repetitions].delay;
+                return Math.Abs(_currentUser.intervals[repetitions].delay + rand.Next(-_currentUser.deviation, 1 + _currentUser.deviation));
+            return _currentUser.intervals[repetitions].delay;
 
         }
 
-        public static void cancel()
+        public void cancel()
         {
-            currentTask.name = name;
-            currentTask.description = description;
+            try
+            {
+                currentTask.name = name;
+                currentTask.description = description;
+            }
+            catch { }
             selectedSubject = new Subject("NULL", "NULL");
             links = new List<string>();
             files = new Dictionary<string, string>();
-            currentTask = new Topic("", new Subject("NULL", "NULL"), 0, 0, "", new List<string>(), new List<string>());
+            currentTask = new Topic("", new Subject("NULL", "NULL"), 0, 0, "", new List<string>(), new List<string>(), _currentUser);
             try
             {
-                Directory.Delete(@$"wwwroot/TempFiles/{User.userId}/", true);
+                Directory.Delete(@$"wwwroot/TempFiles/{_currentUser.userId}/", true);
             }
             catch { }
 
@@ -175,7 +222,7 @@ namespace ServerApp.Services
         }
 
 
-        public static void addLink(bool isEditing)
+        public void addLink(bool isEditing)
         {
             if (isEditing)
                 currentTask.links.Insert(0, link);

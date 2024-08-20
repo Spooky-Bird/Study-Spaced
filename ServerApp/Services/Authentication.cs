@@ -6,10 +6,12 @@ namespace ServerApp.Services
 	public class Auth
 	{
 		internal  List<UserModel> Users { get; set; }
+		User _currentUser;
 
-		//On startup makes call to DB to get all users with the username provided
-		public Auth(string username, UserService userService)
+        //On startup makes call to DB to get all users with the username provided
+        public Auth(string username, UserService userService, User _currentUser)
 		{
+			this._currentUser = _currentUser;
 			Users = userService.GetUsers((username));
 		}
 		//Checks if an account exists with the required username
@@ -37,7 +39,7 @@ namespace ServerApp.Services
 		//Assigns User object's information to correct account
 		public void verfyUser(string password)
 		{
-			User.Generate(Users.Where(x => x.password == (password)).FirstOrDefault());
+            _currentUser.Generate(Users.Where(x => x.password == (password)).FirstOrDefault());
 		}
 	}
 }

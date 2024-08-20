@@ -1,10 +1,12 @@
 ﻿@page "/"
 @inject NavigationManager NavManager
 @inject UserService userService
+@inject User _currentUser
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 
 <script src="https://kit.fontawesome.com/5f2ea077c5.js" crossorigin="anonymous"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans" rel="stylesheet">
+
 @if(render)
 {
 	<div class="mainMeow">
@@ -92,7 +94,7 @@
 			errorMsg = "Username and password are required";
 			return;
 		}
-		Auth authentication = new Auth(username, userService);
+		Auth authentication = new Auth(username, userService, _currentUser);
 		bool validLogin = authentication.validLogin(password);
 
 		//If signup
@@ -104,7 +106,7 @@
 				//Signs user up and navigates to main page
 				createUser();
 				if (remember)
-					await localStorage.SetItemAsync("LoginId", User.userId);
+					await localStorage.SetItemAsync("LoginId", _currentUser.userId);
 				NavManager.NavigateTo("main");
 				return;
 			}
@@ -120,7 +122,7 @@
 				//Transfers info from database to User object and navigates to main page
 				authentication.verfyUser(password);
 				if (remember)
-					await localStorage.SetItemAsync("LoginId", User.userId);
+					await localStorage.SetItemAsync("LoginId", _currentUser.userId);
 				NavManager.NavigateTo("main");
 				return;
 			}
@@ -131,9 +133,9 @@
 	//Gets input from ui entries and stores the information to the user database
 	public void createUser()
 	{
-		User.username = username;
-		User.password = password;
-		userService.StoreUser(User.Model());		
+		_currentUser.username = username;
+		_currentUser.password = password;
+		userService.StoreUser(_currentUser.Model());
 	}
 
 	//Clears error message when user changes their inputs
@@ -142,22 +144,48 @@
 		errorMsg = "‌";
 	}
 
-
+	//On startup
+	//Checks if user has login cookie saved
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if(firstRender) {
+			string filePath = "keys.env";
+			if (!File.Exists(filePath))
+				return;
+
+			foreach (var line in File.ReadAllLines(filePath))
+			{
+				var parts = line.Split(
+					'=',
+					StringSplitOptions.RemoveEmptyEntries);
+
+				if (parts.Length != 2)
+					continue;
+
+				Environment.SetEnvironmentVariable(parts[0], parts[1]);
+			}
+		}
+			//Check if key exists
 			bool keyExists = await localStorage.ContainKeyAsync("LoginId");
 			if (keyExists)
 			{
 				try{
+					//get key
 					string loginCookie = await localStorage.GetItemAsync<string>("LoginId");
+
+					//get user information from database
 					userService.LoadUser(loginCookie);
+
+					//Navigate to main page
 					NavManager.NavigateTo("main");
 					return;
 				}
 				catch {}
 			}
+			//if invalid key, display login page
 			render = true;
+
+			//update ui
 			StateHasChanged();
 		}
 	}

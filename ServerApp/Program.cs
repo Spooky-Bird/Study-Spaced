@@ -22,12 +22,30 @@ namespace ServerApp
             Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("MzM2NTMxNUAzMjM2MmUzMDJlMzBXazR1cUtWVjZtQXF6VEJJaSs3R3VTZndVVXpCSkxVMFpvWllqaFlXSExvPQ==");
             builder.Services.AddScoped<HttpClient>();
 
+            string filePath = "keys.env";
+            if (!File.Exists(filePath))
+                return;
+
+            foreach (var line in File.ReadAllLines(filePath))
+            {
+                var parts = line.Split(
+                    '=',
+                    StringSplitOptions.RemoveEmptyEntries);
+
+                if (parts.Length != 2)
+                    continue;
+
+                Environment.SetEnvironmentVariable(parts[0], parts[1]);
+            }
+
+
+            builder.Services.AddScoped<Env>();	
+			builder.Services.AddScoped<User>();
             builder.Services.AddScoped<UserService>();
             builder.Services.AddScoped<TopicService>();
 			builder.Services.AddScoped<FileService>();
 			builder.Services.AddScoped<UserModel>();
 			builder.Services.AddScoped<TopicModel>();
-			builder.Services.AddScoped<User>();
 			builder.Services.AddScoped<TaskController>();
 
    //         builder.Services.AddCors(options =>

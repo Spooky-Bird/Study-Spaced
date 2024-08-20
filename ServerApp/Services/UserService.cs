@@ -13,11 +13,15 @@ namespace ServerApp.Services
 		public readonly DynamoDBContext DbContext;
         public AmazonDynamoDBClient DynamoClient;
 		//Initialises the connection to the user dataase hosted on AWS DynamoDB
-		public UserService()
-		{
-			var awsCredentials = new Amazon.Runtime.BasicAWSCredentials("AKIA4MTWG6LQHO536SWH", "GDDcWwvn6BN0iijtf3YGnCP/oH+mZZefZyXFYNuw");
-			AmazonDynamoDBClient DynamoClient = new AmazonDynamoDBClient(awsCredentials, Amazon.RegionEndpoint.APSoutheast2);
 
+		User _currentUser;
+
+
+        public UserService(User user)
+		{
+			var awsCredentials = new Amazon.Runtime.BasicAWSCredentials(Environment.GetEnvironmentVariable("Access"), Environment.GetEnvironmentVariable("Secret"));
+			AmazonDynamoDBClient DynamoClient = new AmazonDynamoDBClient(awsCredentials, Amazon.RegionEndpoint.APSoutheast2);
+			_currentUser = user;
 			DbContext = new DynamoDBContext(DynamoClient, new DynamoDBContextConfig
 			{
 				//Setting the Consistent property to true ensures that you'll always get the latest
@@ -49,14 +53,14 @@ namespace ServerApp.Services
 			//As userId is the database's primary key, we are able to use Load to retrieve the desired UserModel
 			UserModel uModel = DbContext.LoadAsync<UserModel>(userId).Result;
 
-			//Transfers info into User object
-			User.Generate(uModel);
+            //Transfers info into User object
+            _currentUser.Generate(uModel);
 		}
 
 		//Deletes user by id
 		public void DeleteUser()
 		{
-			DbContext.DeleteAsync<UserModel>(User.userId);
+			DbContext.DeleteAsync<UserModel>(_currentUser.userId);
 		}
         public async Task fullBackup()
         {

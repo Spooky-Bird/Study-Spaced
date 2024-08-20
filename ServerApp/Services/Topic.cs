@@ -18,19 +18,27 @@
         public DateTime dueDate;
         public string id;
         public string timePretty;
-        public Topic(string name, Subject subject, int overdue, int difficulty, string description, List<string> files, List<string> links)
+
+        User _currentUser;
+
+        public Topic(string name, Subject subject, int overdue, int difficulty, string description, List<string> files, List<string> links, User user)
         {
+            _currentUser = user;
             this.name = name;
             this.subject = subject;
             this.overdue = overdue;
             this.difficulty = difficulty;
             this.description = description;
             this.links = links;
-            FileService fileService = new FileService();
+            FileService fileService = new FileService(_currentUser);
             foreach(string fileName in files)
             {
-                string url = fileService.getUrl($"{User.userId}/{fileName}", "resource-storage-study-spaced").Result;
-                this.files.Add(fileName, url);
+                try
+                {
+                    string url = fileService.getUrl($"{_currentUser.userId}/{fileName}", "resource-storage-study-spaced").Result;
+                    this.files.Add(fileName, url);
+                }
+                catch { }
             }
             this.id = generateId();
             for (int i = 0; i < difficulty; i++)
@@ -38,11 +46,15 @@
                 difficultyIndicator += "!";
             }
         }
-        public Topic(TopicModel model)
+
+        public Topic() { }
+
+        public Topic(TopicModel model, User user)
         {
+            _currentUser = user;
             this.name = (model.topicName);
             this.subject = new Subject("NULL", "NULL");
-            foreach (Subject subject in User.subjects)
+            foreach (Subject subject in _currentUser.subjects)
             {
                 if (subject.name == (model.subjectName))
                     this.subject = subject;
@@ -62,12 +74,14 @@
             {
                 fileNames = (model.files).Split(";").ToList();
             } catch {  }
-            FileService fileService = new FileService();
+            FileService fileService = new FileService(_currentUser);
 
             foreach (string fileName in fileNames)
             {
-                string url = fileService.getUrl($"{User.userId}/{fileName}", "resource-storage-study-spaced").Result;
-                this.files.Add(fileName, url);
+                try { string url = fileService.getUrl($"{_currentUser.userId}/{fileName}", "resource-storage-study-spaced").Result;
+                    this.files.Add(fileName, url);
+                } catch { }
+                
             }
 
             for (int i = 0; i < difficulty; i++)
@@ -91,7 +105,7 @@
             model.repetitions = (repetitions.ToString());
             model.subjectName = (subject.name);
             model.topicName = (name);
-            model.userId = User.userId;
+            model.userId = _currentUser.userId;
             model.links = (string.Join(";",links));
             model.files = (string.Join(";",files.Select(x => x.Key)));
 

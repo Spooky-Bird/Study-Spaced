@@ -9,6 +9,7 @@
 @inject UserService userService
 @inject FileService fileService
 @inject NavigationManager NavManager
+@inject User _currentUser
 
 <script src="https://kit.fontawesome.com/5f2ea077c5.js" crossorigin="anonymous"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans" rel="stylesheet">
@@ -18,7 +19,7 @@
     <ul>
         <li style="float: left;    margin-right: 2rem;margin-top: 24px;margin-left: 1rem;">
 
-            <label for="file-upload" class="uploadImg" style="background-repeat: no-repeat; background-size: cover;     background-image: url(@User.pfpUrl);">
+            <label for="file-upload" class="uploadImg" style="background-repeat: no-repeat; background-size: cover;     background-image: url(@_currentUser.pfpUrl);">
             </label>
             <InputFile style="display:none" OnChange="uploadImg" id="file-upload"><i class="fa-solid fa-user" style="color:#987acd; font-size:3rem;"></i></InputFile>
             <p style="color: red;display: block;width: 100px;font-size: 0.8rem;">@imgErrorMsg</p>
@@ -67,17 +68,17 @@
             return;
         //Checks if password has been changed, if it has it applies it to the user object
         if(passInput != "")
-            User.password = passInput;
+            _currentUser.password = passInput;
 
         //Checks if a valid pfp has been entered and saved to file, if it has, it is uploaded to an s3 bucket
         if (fileName != "")
-            fileService.savePfp($@"wwwroot\TempFiles\{User.userId}\pfp\" + fileName, fileName, contentType);
+            fileService.savePfp($@"wwwroot\TempFiles\{_currentUser.userId}\pfp\" + fileName, fileName, contentType);
 
         //User object updated in db
-        userService.StoreUser(User.Model());
+        userService.StoreUser(_currentUser.Model());
 
         //Updates revert state so it will revert to updated state on cancel
-        revertState = User.Model();
+        revertState = _currentUser.Model();
 
         //Greys out ui
         saveColour = "#a9b7b8";
@@ -112,9 +113,16 @@
     //Defines revert states
     protected override async Task OnInitializedAsync()
     {
+        //Checks if user has been loaded yet
+        if (_currentUser.userId == "")
+        {
+            NavManager.NavigateTo("");
+            return;
+        }
+
         //Revert states are used to reset any changes the user makes if they click cancel or nav away
-        revertState = User.Model();
-        revertPfp = User.pfpUrl;
+        revertState = _currentUser.Model();
+        revertPfp = _currentUser.pfpUrl;
 
         //Creates event listener to cancel changes on nav away
         NavManager.LocationChanged += LocationChanged;
@@ -138,11 +146,11 @@
         imgErrorMsg = "";
         //Deletes temporary pfps
         if(fileName != "")
-            File.Delete($@"wwwroot\TempFiles\{User.userId}\pfp\{fileName}");
+            File.Delete($@"wwwroot\TempFiles\{_currentUser.userId}\pfp\{fileName}");
 
         //Revert changes on user object
-        User.Generate(revertState);
-        User.pfpUrl = revertPfp;
+        _currentUser.Generate(revertState);
+        _currentUser.pfpUrl = revertPfp;
         fileName = "";
         contentType = "";
     }
@@ -160,15 +168,20 @@
                 imgErrorMsg = "Please enter valid image file";
                 return;
             }
+            else if (file.Size > 10000000)
+            {
+                imgErrorMsg = "Please enter a file < 10mb";
+                return;
+            }
             else
             {
                 imgErrorMsg = "";
             }
             //creates path to store file
-            var path = $@"wwwroot\TempFiles\{User.userId}\pfp\" + file.Name;
+            var path = $@"wwwroot\TempFiles\{_currentUser.userId}\pfp\" + file.Name;
 
             //Creates containing directory
-            Directory.CreateDirectory($@"wwwroot\TempFiles\{User.userId}\pfp\");
+            Directory.CreateDirectory($@"wwwroot\TempFiles\{_currentUser.userId}\pfp\");
 
             //Saves pfp to path
             FileStream filestream = new FileStream(path, FileMode.Create, FileAccess.Write);
@@ -176,7 +189,7 @@
             filestream.Close();
 
             //Updates user pfp to user object
-            User.pfpUrl = $@"'/TempFiles/{User.userId}/pfp/" + file.Name + "'";
+            _currentUser.pfpUrl = $@"'/TempFiles/{_currentUser.userId}/pfp/" + file.Name + "'";
             fileName = file.Name;
             contentType = file.ContentType;
             settingsChanged();
@@ -196,7 +209,7 @@
         if (IsValidEmail(e.Value.ToString()))
         {
             //Updates email files
-            User.email = e.Value.ToString();
+            _currentUser.email = e.Value.ToString();
             settingsChanged(); 
         }
         //If user has entered something, and it is invalid, throw error
@@ -217,13 +230,13 @@
         //checks if input has been entered, if not, throw error
         if (e.Value.ToString().Length > 0)
         {
-            User.username = e.Value.ToString();
+            _currentUser.username = e.Value.ToString();
             settingsChanged();
         }
         else
         {
             saveColour = "#a9b7b8";
-            User.username = revertState.username;
+            _currentUser.username = revertState.username;
         }
     }
 }

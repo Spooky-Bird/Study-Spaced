@@ -2,7 +2,9 @@
 @inject NavigationManager NavManager
 @inject UserService userService
 @inject TopicService topicService
+@inject TaskController _taskController
 @inject FileService fileService
+@inject User _currentUser
 
 <PageTitle>Home</PageTitle>
   <head>
@@ -17,14 +19,14 @@
     <NavBar></NavBar>
     <div class="content">
     
-        @if(User.topics.Count() > 0)
+        @if(_currentUser.topics.Count() > 0)
         {
-            <ul class="tasks"> 
-            @foreach(Topic topic in User.topics)
+            <ul class="tasks">
+            @foreach (Topic topic in _currentUser.topics)
             { 
                 <li>
-                        <i class="fa-solid fa-trash" id="deleteIcon" @onclick="() => TaskController.removeTask(topic)"></i>
-                    <i class="fa-solid fa-pencil" id="editIcon" @onclick="() => TaskController.toggleEdit(topic)"><p style="display:inline; margin-left: 5px;font-family: 'Nunito Sans';font-size: 11px;">Edit</p></i>
+                        <i class="fa-solid fa-trash" id="deleteIcon" @onclick="() => _taskController.removeTask(topic)"></i>
+                    <i class="fa-solid fa-pencil" id="editIcon" @onclick="() => _taskController.toggleEdit(topic)"><p style="display:inline; margin-left: 5px;font-family: 'Nunito Sans';font-size: 11px;">Edit</p></i>
                     <i class="fa-solid fa-check" id="editIcon" style="font-size:0.7rem" @onclick="() => taskCompleted(topic)"><p style="display:inline; margin-left: 5px;font-family: 'Nunito Sans';font-size: 11px;">Mark as completed</p></i>
                     <div class="topicCard">
                             <button class="pauseBtn" @onclick="() => toggleTimer(topic)"><i class="@topic.timerIcon"></i></button>
@@ -37,7 +39,7 @@
                                     @topic.difficultyIndicator
                                 </h2>
                                 <h2 style="font-size:1rem; display:inline; position: relative;bottom: 5px;">@topic.name</h2>
-                                    @* <input type="text" style="font-size:1rem; outline:none; border:none; font-weight:bold; width:calc(1.1ch * @topic.name.Length)" @bind-value="@topic.name" oninput="this.style.width = ((this.value.length + 1)) + 'ch';" onload="this.style.width = ((this.value.length + 1)) + 'ch';" @onblur="() => TaskController.updateTask(topic)"> *@
+                                    @* <input type="text" style="font-size:1rem; outline:none; border:none; font-weight:bold; width:calc(1.1ch * @topic.name.Length)" @bind-value="@topic.name" oninput="this.style.width = ((this.value.length + 1)) + 'ch';" onload="this.style.width = ((this.value.length + 1)) + 'ch';" @onblur="() => _taskController.updateTask(topic)"> *@
                                     @if(topic.subject.name != "NULL")
                                     {
                                         <p class="subject" style="background-color:@topic.subject.colour; position: relative;    top: 5px;">@topic.subject.name</p>
@@ -99,11 +101,11 @@
     </div>
 
     <div class="buttons">
-        <div class="addTask" title="Add a task" @onclick="TaskController.toggleTask">
+        <div class="addTask" title="Add a task" @onclick="_taskController.toggleTask">
             <i class="fa-solid fa-plus"></i>
         </div>
         <span class="toolTip" style="bottom:82px">Add task</span>
-    <div class="upcomingTasks" @onclick="TaskController.toggleHistory">
+    <div class="upcomingTasks" @onclick="_taskController.toggleHistory">
             <div class="shrinkTransform">
                 <button class="growTransform" title="Upcoming tasks">
                     <i class="fa-solid fa-forward"></i>
@@ -112,29 +114,29 @@
             <span class="toolTip">Upcoming tasks</span>
         </div>
     </div>
-    @if (TaskController.displayTaskEntry || TaskController.displayTaskEdit)
+    @if (_taskController.displayTaskEntry || _taskController.displayTaskEdit)
     {
-    <div class="addTaskDialouge">
+    <div class="addTaskDialouge" style="    z-index: 5;">
         <div style="position:absolute;width: 100%;background-color:#2b2b2b;position: absolute;left: 0;top: 0;padding: 15px;color: white;width: 100%;">
-            @if (TaskController.displayTaskEntry ) { <div class="h2" id="popupTitle">Add Task</div> } else {<div class="h2" id="popupTitle">Edit Task</div>}
+            @if (_taskController.displayTaskEntry ) { <div class="h2" id="popupTitle">Add Task</div> } else {<div class="h2" id="popupTitle">Edit Task</div>}
         </div>
-        <input type="text" placeholder="Enter title" maxlength="20" class="username" style="float:left; font-size:1rem; margin-top:3rem; background-color:@nameState" value="@TaskController.currentTask.name" @onchange="(ChangeEventArgs args) => {nameState = args.Value.ToString().Length > 0 ? ErrorState.Clear : ErrorState.Error; }" @oninput="(ChangeEventArgs args) => {TaskController.currentTask.name = args.Value.ToString().Length > 0 ? args.Value.ToString() : TaskController.currentTask.name; nameState = ErrorState.Clear; }" />
+        <input type="text" placeholder="Enter title" maxlength="20" class="username" style="float:left; font-size:1rem; margin-top:3rem; background-color:@nameState" @bind-value="@_taskController.currentTask.name" @onblur="() => {nameState = _taskController.currentTask.name.Length > 0 ? ErrorState.Clear : ErrorState.Error; }" @oninput="(ChangeEventArgs args) => {_taskController.currentTask.name = args.Value.ToString().Length > 0 ? args.Value.ToString() : _taskController.currentTask.name; nameState = ErrorState.Clear; }" />
         <div style="margin-left:220px; margin-top: 53px;     width: 150px;overflow: hidden;text-wrap: nowrap; box-shadow: 0 0 5px 2px @subState; border-radius: 10px; padding:5px">
-            @if (TaskController.selectedSubject.name == "NULL")
+            @if (_taskController.selectedSubject.name == "NULL")
             {
                 <p @onclick="@(() => subjectDropDown = !subjectDropDown)" style="cursor:pointer">Select a subject</p>
             }
             else
             {
                 <div @onclick="@(() => subjectDropDown = !subjectDropDown)" style="cursor:pointer">
-                    <div style="height:10px; width:10px; border-radius:50%; background-color:@TaskController.selectedSubject.colour; float:left; margin-top: 6px;margin-right: 10px;"></div>
-                    <p>@TaskController.selectedSubject.name</p>
+                    <div style="height:10px; width:10px; border-radius:50%; background-color:@_taskController.selectedSubject.colour; float:left; margin-top: 6px;margin-right: 10px;"></div>
+                    <p>@_taskController.selectedSubject.name</p>
                 </div>
             }
             @if (subjectDropDown)
             {
                 <ul style="position: absolute;display: inline-grid;">
-                    @foreach (Subject subject in User.subjects)
+                    @foreach (Subject subject in _currentUser.subjects)
                     {
                         <li class="subjectElement" @onclick="() => selectSuject(subject)">
                             <div style="height:10px; width:10px; border-radius:50%; background-color:@subject.colour; float:left; margin-top: 6px;margin-right: 10px;"></div>
@@ -158,12 +160,12 @@
             }
         </div>
         <div style="position: absolute;left: 430px;top: 90px;">
-            <p>Difficulty: @TaskController.currentTask.difficulty</p>
+            <p>Difficulty: @_taskController.currentTask.difficulty</p>
             <div style="height: 10px;border-radius: 10px;overflow: hidden;">
-                <input type="range" class="difficultySlider" step="1" min="0" max="3" @bind-value="@TaskController.currentTask.difficulty" TValue="int">
+                <input type="range" class="difficultySlider" step="1" min="0" max="3" @bind-value="@_taskController.currentTask.difficulty" TValue="int">
                 </div>
             </div>
-        <div class="description"><textarea type="text" placeholder="Enter Description" style="    font-size: 1rem;outline: 0;border: none;height: 100%;box-shadow: none;padding: 0px;"  class="description" @bind="TaskController.currentTask.description"></textarea></div>
+        <div class="description"><textarea type="text" placeholder="Enter Description" style="    font-size: 1rem;outline: 0;border: none;height: 100%;box-shadow: none;padding: 0px;"  class="description" @bind="_taskController.currentTask.description"></textarea></div>
             <div style="width: fit-content;">Upload resources</div>
 
             <div >
@@ -171,21 +173,21 @@
                     <div style="    text-align: start;display: table-cell;vertical-align: middle; width: 24px;">
                         <i class="fa-solid fa-paperclip" style="position: relative;left: 6px;"></i>
                     </div>
-                <input type="url" @onblur="() => {linkDropDown = false;}" style="background-color:@linkState" @bind="TaskController.link" @oninput="() => {linkDropDown = true; linkState = ErrorState.Clear;}" @onkeyup="(KeyboardEventArgs args) => ifEnterPressed(args, false)" />
-                    <div style="cursor:pointer; float: right;background-color: #bfbfbf;width: 27px;height: 26px;float: right;display: inline;color: #495057;padding-left: 8px; font-weight:bold" @onclick="() => {if(verifyUrl(TaskController.link)) {TaskController.addLink(false); } else {linkState = ErrorState.Error; } }">
+                <input type="url" @onblur="() => {linkDropDown = false;}" style="background-color:@linkState" @bind="_taskController.link" @oninput="() => {linkDropDown = true; linkState = ErrorState.Clear;}" @onkeyup="(KeyboardEventArgs args) => ifEnterPressed(args, false)" />
+                    <div style="cursor:pointer; float: right;background-color: #bfbfbf;width: 27px;height: 26px;float: right;display: inline;color: #495057;padding-left: 8px; font-weight:bold" @onclick="() => {if(verifyUrl(_taskController.link)) {_taskController.addLink(false); } else {linkState = ErrorState.Error; } }">
                         +
                     </div>
                 </div>
             @if(linkDropDown)
             {
                 <ul style="    background: #e6e6e6;     width: 622px; position:absolute;max-height: 150px;overflow-y: scroll;     z-index: 1;" >
-                    @foreach (string url in TaskController.currentTask.links)
+                    @foreach (string url in _taskController.currentTask.links)
                     {
                         <li style="overflow: hidden;text-wrap: nowrap;text-overflow: ellipsis; padding: 10px; border-top: 1px solid #bfbfbf;">
                             <p style="    overflow: hidden;width: 94%;text-overflow: ellipsis;overflow-wrap: break-word;float: left;position: relative;top: 3px;">
                                 @url
                             </p>
-                            <p class="delSub" @onclick="() => {TaskController.currentTask.links.Remove(url);}">⨉</p>
+                            <p class="delSub" @onclick="() => {_taskController.currentTask.links.Remove(url);}">⨉</p>
                         </li>
                     }
                 </ul>
@@ -200,14 +202,15 @@
                     </SfUploader>
                 </li>
             </ul>
-            <button class="signUp" style="width: fit-content;padding: 5px 10px;position: absolute;right: 120px;bottom:20px;border-radius: 0.4rem;font-size: 1rem;" @onclick="TaskController.cancel">Cancel</button>
-            @if (TaskController.displayTaskEntry)
+            @if (_taskController.displayTaskEntry)
             {
-            <button class="logIn" style="width: fit-content;padding: 5px 10px;position: absolute;right: 30px; bottom: 20px;border-radius: 0.4rem;font-size: 1rem; margin-bottom:0" @onclick='() => { subState = TaskController.selectedSubject.name != "NULL" ? "White" : ErrorState.Error; if(nameState==ErrorState.Clear && subState == "White") { Task.Run(() => taskSubmitted()); }}'>Confirm</button>
+            <button class="signUp" style="width: fit-content;padding: 5px 10px;position: absolute;right: 130px;bottom:20px;border-radius: 0.4rem;font-size: 1rem;" @onclick="_taskController.cancel">Cancel</button>
+            <button class="logIn" style="width: fit-content;padding: 5px 10px;position: absolute;right: 30px; bottom: 20px;border-radius: 0.4rem;font-size: 1rem; margin-bottom:0" @onclick='() => { subState = _taskController.selectedSubject.name != "NULL" ? "White" : ErrorState.Error; if(nameState==ErrorState.Clear && subState == "White") { Task.Run(() => taskSubmitted()); }}'>Scehdule</button>
             }
             else
             {
-                <button class="logIn" style="width: fit-content;padding: 5px 10px;position: absolute;right: 30px; bottom: 20px;border-radius: 0.4rem;font-size: 1rem; margin-bottom:0" @onclick='() => { subState = TaskController.selectedSubject.name != "NULL" ? "White" : ErrorState.Error; if(nameState==ErrorState.Clear && subState == "White") { Task.Run(() => confirmEdit()); }}'>Confirm</button>
+            <button class="signUp" style="width: fit-content;padding: 5px 10px;position: absolute;right: 120px;bottom:20px;border-radius: 0.4rem;font-size: 1rem;" @onclick="_taskController.cancel">Cancel</button>
+                <button class="logIn" style="width: fit-content;padding: 5px 10px;position: absolute;right: 30px; bottom: 20px;border-radius: 0.4rem;font-size: 1rem; margin-bottom:0" @onclick='() => { subState = _taskController.selectedSubject.name != "NULL" ? "White" : ErrorState.Error; if(nameState==ErrorState.Clear && subState == "White") { Task.Run(() => confirmEdit()); }}'>Confirm</button>
             }
     </div>
     }
@@ -219,23 +222,23 @@
         <div style="position:absolute;width: 100%;background-color:#2b2b2b;position: absolute;left: 0;top: 0;padding: 15px;color: white;width: 100%;">
             <div class="h2" id="popupTitle">Edit Task</div>
         </div>
-        <input type="text" placeholder="Enter title" class="username" style="float:left; font-size:1rem; margin-top:3rem" @bind="TaskController.currentTask.name" />
+        <input type="text" placeholder="Enter title" class="username" style="float:left; font-size:1rem; margin-top:3rem" @bind="_taskController.currentTask.name" />
         <div class="subjectDropDown">
-            @if (TaskController.selectedSubject.name == "NULL")
+            @if (_taskController.selectedSubject.name == "NULL")
             {
                 <p @onclick="@(() => subjectDropDown = true)">Select a subject</p>
             }
             else
             {
                 <div @onclick="@(() => subjectDropDown = true)">
-                    <div style="height:10px; width:10px; border-radius:50%; background-color:@TaskController.selectedSubject.colour; float:left; margin-top: 6px;margin-right: 10px;"></div>
-                    <p>@TaskController.selectedSubject.name</p>
+                    <div style="height:10px; width:10px; border-radius:50%; background-color:@_taskController.selectedSubject.colour; float:left; margin-top: 6px;margin-right: 10px;"></div>
+                    <p>@_taskController.selectedSubject.name</p>
                 </div>
             }
             @if (subjectDropDown)
             {
                 <ul style="position: absolute;display: inline-grid;">
-                    @foreach (Subject subject in User.subjects)
+                    @foreach (Subject subject in _currentUser.subjects)
                     {
                         <li class="subjectElement" @onclick="() => selectSuject(subject)">
                             <div style="height:10px; width:10px; border-radius:50%; background-color:@subject.colour; float:left; margin-top: 6px;margin-right: 10px;"></div>
@@ -260,33 +263,33 @@
         </div>
 
         <div style="position: absolute;left: 430px;top: 90px;">
-            <p>Difficulty: @TaskController.difficulty</p>
+            <p>Difficulty: @_taskController.difficulty</p>
             <div style="height: 10px;border-radius: 10px;overflow: hidden;">
-                <input type="range" class="difficultySlider" step="1" min="0" max="3" @bind-value="@TaskController.difficulty" TValue="int">
+                <input type="range" class="difficultySlider" step="1" min="0" max="3" @bind-value="@_taskController.difficulty" TValue="int">
             </div>
         </div>
-        <div class="description"><input type="text" placeholder="Enter Description" style="font-size:1rem" @bind="TaskController.currentTask.description"></div>
+        <div class="description"><input type="text" placeholder="Enter Description" style="font-size:1rem" @bind="_taskController.currentTask.description"></div>
         <div style="width: fit-content;">Upload resources</div>
         <div @onclick="() => {linkDropDown = false;}">
             <div class="linkEntry">
                 <div style="    text-align: start;display: table-cell;vertical-align: middle; width: 24px;">
                     <i class="fa-solid fa-paperclip" style="position: relative;left: 6px;"></i>
                 </div>
-                <input type="url" @bind="TaskController.link" @oninput="() => {linkDropDown = true;}" @onkeyup="(KeyboardEventArgs args) => ifEnterPressed(args, true)" />
-                <div style="cursor:pointer;float: right;background-color: #bfbfbf;width: 27px;height: 26px;float: right;display: inline;color: #495057;padding-left: 8px; font-weight:bold" @onclick="() => TaskController.addLink(true)">
+                <input type="url" @bind="_taskController.link" @oninput="() => {linkDropDown = true;}" @onkeyup="(KeyboardEventArgs args) => ifEnterPressed(args, true)" />
+                <div style="cursor:pointer;float: right;background-color: #bfbfbf;width: 27px;height: 26px;float: right;display: inline;color: #495057;padding-left: 8px; font-weight:bold" @onclick="() => _taskController.addLink(true)">
                     +
                 </div>
             </div>
             @if (linkDropDown)
             {
                 <ul style="    background: #e6e6e6;     width: 622px; position:absolute;max-height: 150px;overflow-y: scroll;     z-index: 1;">
-                    @foreach (string url in TaskController.currentTask.links)
+                    @foreach (string url in _taskController.currentTask.links)
                     {
                         <li style="overflow: hidden;text-wrap: nowrap;text-overflow: ellipsis; padding: 10px; border-top: 1px solid #bfbfbf;">
                             <p style="    overflow: hidden;width: 94%;text-overflow: ellipsis;overflow-wrap: break-word;float: left;position: relative;top: 3px;">
                                 @url
                             </p>
-                            <p class="delSub" @onclick="() => {TaskController.currentTask.links.Remove(url);}">🗙</p>
+                            <p class="delSub" @onclick="() => {_taskController.currentTask.links.Remove(url);}">🗙</p>
                         </li>
                     }
                 </ul>
@@ -299,23 +302,23 @@
                 </SfUploader>
             </li>
         </ul>
-        <button class="signUp" style="width: fit-content;padding: 5px 10px;position: absolute;right: 120px;bottom:20px;border-radius: 0.4rem;font-size: 1rem;" @onclick="() => TaskController.cancel()">Cancel</button>
+        <button class="signUp" style="width: fit-content;padding: 5px 10px;position: absolute;right: 120px;bottom:20px;border-radius: 0.4rem;font-size: 1rem;" @onclick="() => _taskController.cancel()">Cancel</button>
         <button class="logIn" style="width: fit-content;padding: 5px 10px;position: absolute;right: 30px; bottom: 20px;border-radius: 0.4rem;font-size: 1rem; margin-bottom:0" @onclick="() => { Task.Run(() => confirmEdit());}">Confirm</button>
     </div>
 }
 
-@if(TaskController.displayTaskHistory)
+@if(_taskController.displayTaskHistory)
 {
     <div class="addTaskDialouge">
         <div style="position:absolute;width: 100%;background-color: #2b2b2b;position: absolute;left: 0;top: 0;padding: 15px;color: white;width: 100%;">
             <div class="h2" id="popupTitle">All tasks</div>
         </div>
         <ul style="margin-top: 40px; height: 100%;overflow: scroll;">
-            @foreach (var (topic, index) in User.allTopics.WithIndex())
+            @foreach (var (topic, index) in _currentUser.allTopics.WithIndex())
             {
                 <li>
                     @if(index != 0) {
-                        @if (topic.dueDate != User.allTopics[index - 1].dueDate)
+                        @if (topic.dueDate != _currentUser.allTopics[index - 1].dueDate)
                         {
                             <h2>@topic.dueDate.ToLongDateString()</h2>
                         }
@@ -329,26 +332,26 @@
                         <div style="height:10px; width:10px; border-radius:50%; background-color:@topic.subject.colour; float:left; margin-top: 6px;margin-right: 10px; margin-left:1rem;"></div>
                     }
                     <p style="display:inline; font-size:1.2rem">@topic.name</p>
-                    <i class="fa-solid fa-trash" id="deleteIcon" @onclick="@(() => {TaskController.removeTask(topic); StateHasChanged();})" style="margin-top:5px; margin-right:1rem"></i>
-                    <i class="fa-solid fa-pencil" id="deleteIcon" @onclick="() => TaskController.toggleEdit(topic)" style="margin-top:5px; margin-right:1rem"></i>
+                    <i class="fa-solid fa-trash" id="deleteIcon" @onclick="@(() => {_taskController.removeTask(topic); StateHasChanged();})" style="margin-top:5px; margin-right:1rem"></i>
+                    <i class="fa-solid fa-pencil" id="deleteIcon" @onclick="() => _taskController.toggleEdit(topic)" style="margin-top:5px; margin-right:1rem"></i>
                 </li>
             }
         </ul>
     </div>
 }
 
-@if (TaskController.displayTaskEntry || TaskController.displayTaskHistory || TaskController.displayTaskEdit)
+@if (_taskController.displayTaskEntry || _taskController.displayTaskHistory || _taskController.displayTaskEdit)
 {
-    @if(TaskController.displayTaskEdit) {
-        <div class="dimmer" @onclick="() => TaskController.cancel()"></div>
+    @if(_taskController.displayTaskEdit) {
+        <div class="dimmer" @onclick="() => _taskController.cancel()"></div>
     }
-    else if (TaskController.displayTaskHistory)
+    else if (_taskController.displayTaskHistory)
     {
-        <div class="dimmer" @onclick="TaskController.toggleHistory"></div>
+        <div class="dimmer" @onclick="_taskController.toggleHistory"></div>
     }
     else
     {
-        <div class="dimmer" @onclick="TaskController.cancel"></div>
+        <div class="dimmer" @onclick="_taskController.cancel"></div>
     }
 }
 @code {
@@ -365,31 +368,46 @@
     string newSubState = ErrorState.Clear;
     string linkState = ErrorState.Clear;
 
+    //Event handler for when file uploaded
+    //uploads each file to local storage
+    //converts file to pdf if applicable
     private async Task OnChange(UploadChangeEventArgs args)
     {
         try
         {
+            //Iterates through each file
             foreach (var file in args.Files)
             {
-                var path = $@"wwwroot\TempFiles\{User.userId}\" + file.FileInfo.Name;
-                Directory.CreateDirectory($@"wwwroot\TempFiles\{User.userId}\");
+                //defines new path to save file
+                var path = $@"wwwroot\TempFiles\{_currentUser.userId}\" + file.FileInfo.Name;
+
+                //creates directory to store to store files
+                Directory.CreateDirectory($@"wwwroot\TempFiles\{_currentUser.userId}\");
+
+                //Saves file to storage
                 FileStream filestream = new FileStream(path, FileMode.Create, FileAccess.Write);
                 await file.File.OpenReadStream(long.MaxValue).CopyToAsync(filestream);
                 filestream.Close(); 
+
+                //checks if file is not already a pdf
                 if (file.File.ContentType != "application/pdf")
                 {
                     try
                     {
+                        //changes file extention to pdf
                         string newName = file.FileInfo.Name.Split(".")[0] + ".pdf";
-                        if (fileService.convToPdf($@"wwwroot\TempFiles\{User.userId}\{file.FileInfo.Name}", file.File.ContentType).Result)
+
+                        //Convert to pdf, if successful save new pdf to storage and return out of function
+                        if (fileService.convToPdf($@"wwwroot\TempFiles\{_currentUser.userId}\{file.FileInfo.Name}", file.File.ContentType).Result)
                         {
-                            TaskController.currentTask.files.Add(newName, "application/pdf");
+                            _taskController.currentTask.files.Add(newName, "application/pdf");
                             return;
                         }
                     } catch (Exception e){}
 
                 }
-                TaskController.currentTask.files.Add(file.FileInfo.Name, file.File.ContentType);
+                //If file couldn't be converted to pdf, save original file to local storage
+                _taskController.currentTask.files.Add(file.FileInfo.Name, file.File.ContentType);
             }
         }
         catch (Exception ex)
@@ -398,16 +416,24 @@
         }
     }
 
+    //Event handler to delete file
     private async Task OnRemoved(RemovingEventArgs args)
     {
         try
         {
+            //Iterates through all deleted files
             foreach (var file in args.FilesData)
             {
-                var path = $@"wwwroot\TempFiles\{User.userId}\" + file.Name;
+                //gets file path
+                var path = $@"wwwroot\TempFiles\{_currentUser.userId}\" + file.Name;
+
+                //gets file path if converted to pdf
                 string newPath = path.Split(".")[0] + ".pdf";
 
-                TaskController.files.Remove(file.Name);
+                //removes file from file list
+                _taskController.files.Remove(file.Name);
+
+                //attempts to delete file from both possible paths
                 File.Delete(newPath);
                 File.Delete(path);
             }
@@ -418,43 +444,61 @@
         }
     }
 
+    //Submits link on enter
     void ifEnterPressed(KeyboardEventArgs args, bool isEditing)
     {
+        //checks if keypress was 'Enter'
         if(args.Key == "Enter") {
-            if (!verifyUrl(TaskController.link))
+            //checks if link is valid
+            //if invalid, set error state to 'Error'
+            if (!verifyUrl(_taskController.link))
             {
                 linkState = ErrorState.Error;
                 return;
             }
-            TaskController.addLink(isEditing);
+            //if link is valid, adds link to user object
+            _taskController.addLink(isEditing);
         }
     }
 
+    //Checks if valid url is given
     bool verifyUrl(string url)
     {
         Uri uriResult;
+        //uses Uri.TryCreate to attempt to generate a uri from the link
+        //returns true if sucessful, false if not
         bool result = Uri.TryCreate(url, UriKind.Absolute, out uriResult)
             && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
         return result;
     }
 
+    //Remove link from topic
     void RemoveLink(string link, Topic topic)
     {
+        //updates topic's link list
         topic.links.Remove(link);
+
+        //updates db
         topicService.StoreTopic(topic.Model());
     }
 
+    //remove file from topic
     void RemoveFile(string key, Topic topic)
     {
+        //updates topic's file list
         topic.files.Remove(key);
+
+        //deletes file from s3 bucket
         fileService.deleteFile(key);
+
+        //updates topic db
         topicService.StoreTopic(topic.Model());
     }
 
     //Allows user to select subject from dropdown
     public void selectSuject(Subject subject, Topic topic = null)
     {
-        TaskController.selectedSubject = subject;
+        _taskController.selectedSubject = subject;
         subjectDropDown = false;
         subState = "White";
     }
@@ -469,10 +513,13 @@
     //Creates the new subject and adds to subject list
     public void addNewSubjectComplete()
     {
-        if(newSubject.name.Length > 0 && !User.subjects.Select(x => x.name).Contains(newSubject.name))
+        //checks name has been entered and hasnt already been used
+        if(newSubject.name.Length > 0 && !_currentUser.subjects.Select(x => x.name).Contains(newSubject.name))
         {
-            User.subjects.Add(newSubject);
-            userService.StoreUser(User.Model());
+            _currentUser.subjects.Add(newSubject);
+
+            //updates db
+            userService.StoreUser(_currentUser.Model());
             addSubject = false;
             newSubState = ErrorState.Clear;
         }
@@ -482,71 +529,111 @@
         }
     }
 
+    //Runs on startup
     protected override async Task OnInitializedAsync() 
     {
-        if (User.userId == "")
+
+        //Checks if user has been loaded yet
+        if (_currentUser.userId == "")
         {
             NavManager.NavigateTo("");
-        } 
-        if (User.topics.Count() == 0)
+            return;
+        }
+        //Displaying task list
+        if (_currentUser.topics.Count() == 0)
         {
-            User.topics = topicService.GetTasks()[0].OrderByDescending(x => x.overdue).ToList();
-            User.allTopics = topicService.GetTasks()[1];
-            for (int i = 0; i < User.topics.Count(); i++)
+            List<List<Topic>> topicsLists = topicService.GetTasks().ToList();
+            //Recieves and orders all due tasks for the current user
+            _currentUser.topics = topicsLists[0].OrderByDescending(x => x.overdue).ToList();
+
+            //Recieves all tasks for current user
+            _currentUser.allTopics = topicsLists[1];
+
+            //Determines durations from each topic
+            for (int i = 0; i < _currentUser.topics.Count(); i++)
             {
-                if (User.topics[i].repetitions >= User.intervals.Count())
-                    User.topics[i].duration = User.intervals[^1].duration * 60;
+                //If the number of repetitions has exceeded the number of defined intervals, it defaults to the last in the list
+                if (_currentUser.topics[i].repetitions >= _currentUser.intervals.Count())
+                    _currentUser.topics[i].duration = _currentUser.intervals[^1].duration * 60;
                 else
-                    User.topics[i].duration = User.intervals[User.topics[i].repetitions].duration * 60;
-                User.topics[i].timePretty = DateTime.ParseExact("00:00", "mm:ss", null).AddSeconds(User.topics[i].duration).ToString("mm:ss");
+                    _currentUser.topics[i].duration = _currentUser.intervals[_currentUser.topics[i].repetitions].duration * 60;
+
+                //Formats duration into mm:ss format
+                _currentUser.topics[i].timePretty = DateTime.ParseExact("00:00", "mm:ss", null).AddSeconds(_currentUser.topics[i].duration).ToString("mm:ss");
             }
         }
+        //If tasks already exist on startup, the user is navigating from another page, so we want to make sure that none of the play icons are left playing
         else
-            TaskController.currentTask.timerIcon = "fa-solid fa-play";
+            _taskController.currentTask.timerIcon = "fa-solid fa-play";
+
+        //Creates new timer
         _timer = new System.Timers.Timer(1000);
+
+        //OnTImedEvent run every 1000ms
         _timer.Elapsed += OnTimedEvent;
     }
 
     private async void OnTimedEvent(object? sender, EventArgs e)
     {
-        TaskController.currentTask.elapsedSeconds++;
-        TaskController.currentTask.timePretty = DateTime.Parse("00:00").AddSeconds(TaskController.currentTask.duration - TaskController.currentTask.elapsedSeconds).ToString("mm:ss");
+        //Increments elapsed seconds
+        _taskController.currentTask.elapsedSeconds++;
 
+        //Updates timer display
+        _taskController.currentTask.timePretty = DateTime.Parse("00:00").AddSeconds(_taskController.currentTask.duration - _taskController.currentTask.elapsedSeconds).ToString("mm:ss");
+
+        //Refreshes ui
         await InvokeAsync(() =>
         {
             StateHasChanged();
         });
 
-        if (TaskController.currentTask.elapsedSeconds >= TaskController.currentTask.duration)
+        //if timer has completed, run task complete function and stop timer
+        if (_taskController.currentTask.elapsedSeconds >= _taskController.currentTask.duration)
         {
-            taskCompleted(TaskController.currentTask);
+            taskCompleted(_taskController.currentTask);
             _timer.Stop();
         }
     }
 
+    //Runs when task has been completed
     async void taskCompleted(Topic topic)
     {
         topic.timerIcon = "fa-solid fa-check";
-        TaskController.taskCompleted(topic);
-        User.topics.Remove(topic);
+
+        //Updates task status on database
+        _taskController.taskCompleted(topic);
+
+        //removes task from task list
+        _currentUser.topics.Remove(topic);
+
+        //refreshes ui
         await InvokeAsync(() =>
         {
             StateHasChanged();
         });
     }
 
+    //toggles timer 
     private void toggleTimer(Topic task)
     {
+        //if task already completed, dont start timer
         if (task.elapsedSeconds >= task.duration)
             return;
-        if (TaskController.currentTask != task)
-            TaskController.currentTask.timerIcon = "fa-solid fa-play";
-        TaskController.currentTask = task;
+
+        //if not toggling current task, revert current task icon to default
+        if (_taskController.currentTask != task)
+            _taskController.currentTask.timerIcon = "fa-solid fa-play";
+
+        //updates current task 
+        _taskController.currentTask = task;
+
+        //if timer not playing, set icon to pause and start timer
         if (task.timerIcon == "fa-solid fa-play")
         {
             task.timerIcon = "fa-solid fa-pause";
             Start();
         }
+        //if timer currently playing, revert icon to default and pause timer
         else
         {
             task.timerIcon = "fa-solid fa-play";
@@ -554,28 +641,48 @@
         }
     }
 
+    //Starts timer
     private void Start()
     {
         StateHasChanged();
         _timer.Start();
     }
+
+    //pauses timer
     private void Pause()
     {
         _timer.Stop();
     }
 
+    //runs confirm edit function asynchronously as some functions may result in noticable lag times
     public async Task confirmEdit()
     {
-        TaskController.toggleEdit();
+        //runs confirm edit function
+        await _taskController.confirmEdit();
+
+        //updates ui
         InvokeAsync(() => StateHasChanged());
-        await TaskController.confirmEdit();
+
+        //toggles the show edit page
+        _taskController.toggleEdit();
+
+        //updates ui again
         InvokeAsync(() => StateHasChanged());
     }
+    
+    //runs submit task function asynchronously as some functions may result in noticable lag times
     public async Task taskSubmitted()
     {
-        TaskController.toggleTask();
+        //runs task submitted function
+        _taskController.taskSubmitted();
+
+        //updates ui
         InvokeAsync(() => StateHasChanged());
-        TaskController.taskSubmitted();
+
+        //toggles the show task creation page
+        _taskController.toggleTask();
+
+        //updates ui again
         InvokeAsync(() => StateHasChanged());
     }
 

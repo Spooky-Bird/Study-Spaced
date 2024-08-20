@@ -1,6 +1,10 @@
 ﻿@page "/settings"
 @inject NavigationManager NavManager
 @inject UserService userService
+@inject TopicService topicService
+@inject User _currentUser
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject FileService fileService
 <script src="https://kit.fontawesome.com/5f2ea077c5.js" crossorigin="anonymous"></script>
 <link href="_content/Syncfusion.Blazor/styles/bootstrap.css" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans" rel="stylesheet">
@@ -12,15 +16,15 @@
         <li style="float:left; margin-top:0px; margin-right:2rem;">
             <div>
                 <h2>Set intervals</h2>
-                <p style="float:left;width: 100px;">Deviation</p>
-                <input type="number" min="0" style="width:100px; right: 1rem; color:@deviationState" placeholder="@revertState.deviation.ToString() day(s)" @onchange="(ChangeEventArgs args) => RandomChanged(args)" />
+                <p style="float:left;width: 100px;">Max deviation</p>
+                <input type="number" min="0" style="width:100px; right: 1rem; margin-left: 1rem; color:@deviationState" placeholder="@revertState.deviation.ToString() day(s)" @onchange="(ChangeEventArgs args) => RandomChanged(args)" />
 
-                @foreach(var (interval, index) in User.intervals.WithIndex())
+                @foreach(var (interval, index) in _currentUser.intervals.WithIndex())
                 {   
                     <div>
                         <p style="float:left;width: 100px;">Interval @(index + 1)</p>
-                        <input type="number" min="1" style="width:100px; right: 1rem; color:@delayStates[index]" placeholder="@delays[index] day(s)" @onchange="(ChangeEventArgs args) => DelayChanged(args, index)" />
-                        <input type="number" min="1" style="width:100px; right: 1rem; color:@durationStates[index]" placeholder="@durations[index] min(s)" @onchange="(ChangeEventArgs args) => DurationChanged(args, index)" />
+                        <input type="number" min="1" style="width:100px; right: 1rem; margin-left: 1rem; color:@delayStates[index]" placeholder="@delayPlaceholders[index] day(s)" @onchange="(ChangeEventArgs args) => DelayChanged(args, index)" />
+                        <input type="number" min="1" style="width:100px; right: 1rem; color:@durationStates[index]" placeholder="@durationPlaceholders[index] min(s)" @onchange="(ChangeEventArgs args) => DurationChanged(args, index)" />
                         <p class="delSub" @onclick="() => RemoveInterval(interval)">⨉</p>
                     </div>
                 }
@@ -30,10 +34,10 @@
         <li>
             <div style="width: fit-content;display: inline-block;">
                 <h2>Subjects</h2>
-                @foreach (var (subject, index) in User.subjects.WithIndex())
+                @foreach (var (subject, index) in _currentUser.subjects.WithIndex())
                 {
                     <div>
-                        <input type="text" maxlength="20" style="float:left; width: 200px; border:none; color:@subjectStates[index]" placeholder="@subjects[index]" @onchange="(ChangeEventArgs args) => updateSubject(args, subject, index)" @oninput='(ChangeEventArgs args) => {subjectStates[index] = !User.subjects.Select(x => x.name).Contains(args.Value.ToString()) ? ErrorState.Clear : "red"; }'>
+                        <input type="text" maxlength="20" style="float:left; width: 200px; border:none; color:@subjectStates[index]" placeholder="@subjectPlaceholders[index]" @onchange="(ChangeEventArgs args) => updateSubject(args, subject, index)" @oninput='(ChangeEventArgs args) => {subjectStates[index] = !_currentUser.subjects.Select(x => x.name).Contains(args.Value.ToString()) ? ErrorState.Clear : "red"; }'>
                         <input type="color" @bind-value="@subject.colour" class="cPick" style="background-color:@subject.colour" @oninput="settingChanged">
                         <p class="delSub" @onclick="() => removeSubject(subject)">⨉</p></div>
 
@@ -51,9 +55,9 @@
 </div>
 
 @code {
-    List<int> delays = new List<int>();
-    List<int> durations = new List<int>();
-    List<string> subjects = new List<string>();
+    List<int> delayPlaceholders = new List<int>();
+    List<int> durationPlaceholders = new List<int>();
+    List<string> subjectPlaceholders = new List<string>();
     List<string> subjectStates = new List<string>();
     List<string> delayStates = new List<string>();
     List<string> durationStates = new List<string>();
@@ -63,34 +67,66 @@
     string addIntervalColour = "#987acd";
     string saveColour = "#a9b7b8";
 
-    public void deleteAccount()
+    //Deletes account
+    public async Task deleteAccount()
     {
+        //Deletes user profile from db
         userService.DeleteUser();
+
+        //Deletes all user's topics
+        topicService.clearTopics();
+
+        //Deletes alll user's files + pfp
+        fileService.clearFiles();
+
+        //Clears login cookie
+        await localStorage.SetItemAsync("LoginId", "");
+
+        //Wipes all user info from cache
+        _currentUser.clear();
+
+        //Navigates top login page
         NavManager.NavigateTo("");
     }
+
+    //Event handler to create a new subject
     public void AddSubject()
     {
-        if(User.subjects.Count() < 6)
+        //Checks if user has reached max subject limit
+        if (_currentUser.subjects.Count() < 6)
         {
-            User.subjects.Add(new Subject("New Subject", "#000000"));
-            subjects.Add("New Subject");
+            //Adds new item to placeholder list
+            subjectPlaceholders.Add("New Subject");
+
+            //Adds new item for the new subject's error state
+            subjectStates.Add(ErrorState.Clear);
+
+            //Adds the new error
+            _currentUser.subjects.Add(new Subject("New Subject", "#000000"));
             settingChanged();
         }
-        if (User.subjects.Count() == 6)
+        //Greys out the 'add subject' button if limit exceeded
+        else
             addSubjectColour = "#a9b7b8";
     }
 
+    //Data validation for editing a subject
     public void updateSubject(ChangeEventArgs args, Subject subject, int index)
     {
+        //Checks subject has a name
         if (args.Value.ToString().Length > 0)
         {
-            if (!User.subjects.Select(x => x.name).Contains(args.Value.ToString())) {
+            //Checks if subject name is already taken
+            if (!_currentUser.subjects.Select(x => x.name).Contains(args.Value.ToString()))
+            {
+                //updates subject
                 settingChanged();
                 subject.name = args.Value.ToString();
             }
             else
             {
-                subject.name = subjects[index];
+                //reverts subject name
+                subject.name = subjectPlaceholders[index];
                 saveColour = "#a9b7b8";
 
             } 
@@ -98,66 +134,90 @@
 
     }
 
+    //Creates new interval
     public void AddInterval()
     {
         settingChanged();
-        if (User.intervals.Count() < 6)
+        //Checks if interval limit has been reached
+        if (_currentUser.intervals.Count() < 6)
         {
-            User.intervals.Add(new Interval(28, 5));
-            delays.Add(28);
-            durations.Add(5);
+            //adds placeholder values
+            delayPlaceholders.Add(28);
+            durationPlaceholders.Add(5);
+
+            //adds error states
             delayStates.Add(ErrorState.Clear);
             durationStates.Add(ErrorState.Clear);
+
+            //creates new interval object
+            _currentUser.intervals.Add(new Interval(28, 5));
         }
-        if (User.intervals.Count() == 6)
+        if (_currentUser.intervals.Count() == 6)
             addIntervalColour = "#a9b7b8";
     }
 
+    //deletes given interval
     public void RemoveInterval(Interval interval)
     {
         settingChanged();
-        User.intervals.Remove(interval);
-        delayStates.RemoveAt(delays.FindIndex(x => x == interval.delay));
-        delays.Remove(interval.delay);
-        durationStates.RemoveAt(durations.FindIndex(x => x == interval.duration));
-        durations.Remove(interval.duration);
+        //removes interval from user intervals
+        _currentUser.intervals.Remove(interval);
+
+        //gets interval index from placeholder list and remove error states at same index
+        //then deletes item from placeholder list
+        delayStates.RemoveAt(delayPlaceholders.FindIndex(x => x == interval.delay));
+        delayPlaceholders.Remove(interval.delay);
+        durationStates.RemoveAt(durationPlaceholders.FindIndex(x => x == interval.duration));
+        durationPlaceholders.Remove(interval.duration);
         addIntervalColour = "#987acd";
     }
 
+    //Data validation for when delay changed
     public void DelayChanged(ChangeEventArgs args, int index)
     {
+        //checks if value is positive
         if (Int32.Parse((string)args.Value) >= 0)
         {            
-            User.intervals[index].delay = Int32.Parse((string)args.Value);
+            //updates values
+            _currentUser.intervals[index].delay = Int32.Parse((string)args.Value);
             settingChanged();
         }
         else
         {
             saveColour = "#a9b7b8";
         }
+        //if value is negative, set error state to 'Error'
         delayStates[index] = Int32.Parse((string)args.Value) >= 0 ? ErrorState.Clear : "red";
     }
 
+    //Event handler for when deviation changed
     public void RandomChanged(ChangeEventArgs args)
     {
+        //checks if value is positive
         if (Int32.Parse((string)args.Value) >= 0)
         {            
-            User.deviation = Int32.Parse((string)args.Value);
+            //updates values
+            _currentUser.deviation = Int32.Parse((string)args.Value);
             settingChanged();
         }
         else
         {
             saveColour = "#a9b7b8";
         }
+        //if value is negative, set error state tp 'Error'
         deviationState = Int32.Parse((string)args.Value) >= 0 ? ErrorState.Clear : "red";
     }
 
+    //Event handler for when a duration value chagned
     public void DurationChanged(ChangeEventArgs args, int index)
     {
+        //if value is negative, set error state to 'Error'
         durationStates[index] = Int32.Parse((string)args.Value) >= 0 ? ErrorState.Clear : "red";
+        //checks if value is positive
         if (Int32.Parse((string)args.Value) >= 0)
         {            
-            User.intervals[index].duration = Int32.Parse((string)args.Value);
+            //updates values
+            _currentUser.intervals[index].duration = Int32.Parse((string)args.Value);
             settingChanged();
         }
         else
@@ -166,67 +226,104 @@
         }
     }
 
+    //Event handler to remvoe subject
     public void removeSubject(Subject subject)
     {
         addSubjectColour = "#987acd";
         settingChanged();
-        User.subjects.Remove(subject);
-        subjectStates.RemoveAt(subjects.FindIndex(x => x == subject.name));
-        subjects.Remove(subject.name);
+
+        //removes subject from user object
+        _currentUser.subjects.Remove(subject);
+
+        //gets subject index from placeholder list and remove error states at same index
+        subjectStates.RemoveAt(subjectPlaceholders.FindIndex(x => x == subject.name));
+
+        //deletes item from placeholder list
+        subjectPlaceholders.Remove(subject.name);
     }
 
+    //When any settings is changed, it updates interactable ui elements such as save and cancel to indicate that they are interactable
+    //sets colour theme to accent colour
     public void settingChanged()
     {
         saveColour = "#987acd";
     }
 
+    //Saves any changes to user database
     public void updateUser()
     {
+        //Checks if any invalid inputs have been entered
         if (subjectStates.Contains("red"))
             return;
         if (delayStates.Contains("red"))
             return;
         if (durationStates.Contains("red"))
             return;
-            if (deviationState == ("red"))
+        if (deviationState == ("red"))
             return;
-        userService.StoreUser(User.Model());
+        //saves changes to user db
+        userService.StoreUser(_currentUser.Model());
+
+        //greys out save + cancel
         saveColour = "#a9b7b8";
-        revertState = User.Model();
+
+        //updates revert state to new model
+        revertState = _currentUser.Model();
 
     }
 
+    //Runs on startup
+    //initialises placeholders and error states
     protected override async Task OnInitializedAsync()
     {
+        //Checks if user has been loaded yet
+        if (_currentUser.userId == "")
+        {
+            NavManager.NavigateTo("");
+            return;
+        }
+            
+        ////Creates event listener to cancel changes on nav away
         NavManager.LocationChanged += LocationChanged;
-        revertState = User.Model();
-        delays.AddRange(User.intervals.Select(x => x.delay));
-        durations.AddRange(User.intervals.Select(x => x.duration));
-        subjects.AddRange(User.subjects.Select(x => x.name));
-        subjectStates.AddRange(User.subjects.Select(x => ErrorState.Clear));
-        delayStates.AddRange(User.subjects.Select(x => ErrorState.Clear));
-        durationStates.AddRange(User.subjects.Select(x => ErrorState.Clear));
-        if(User.intervals.Count() >= 6)
+
+        //Revert states are used to reset any changes the user makes if they click cancel or nav away
+        revertState = _currentUser.Model();
+
+        //Creates new lists for placeholders and error states for each input
+        delayPlaceholders.AddRange(_currentUser.intervals.Select(x => x.delay));
+        durationPlaceholders.AddRange(_currentUser.intervals.Select(x => x.duration));
+        subjectPlaceholders.AddRange(_currentUser.subjects.Select(x => x.name));
+        subjectStates.AddRange(_currentUser.subjects.Select(x => ErrorState.Clear));
+        delayStates.AddRange(_currentUser.intervals.Select(x => ErrorState.Clear));
+        durationStates.AddRange(_currentUser.intervals.Select(x => ErrorState.Clear));
+
+        //Check if user has exceeded interval limit
+        if (_currentUser.intervals.Count() >= 6)
         {
             addIntervalColour = "#a9b7b8";
         }
-        if (User.subjects.Count() >= 6)
+        //Check if user has exceeded subject limit
+        if (_currentUser.subjects.Count() >= 6)
         {
             addSubjectColour = "#a9b7b8";
         }
     }
 
+    //Reverts any changed inputs on nav away
     void LocationChanged(object sender, LocationChangedEventArgs e)
     {
         //Checks if there are unsaved changes to revert
         if (saveColour != "#a9b7b8")
             Cancel();
+        //Unsubscribes from event
         NavManager.LocationChanged -= LocationChanged;
     }
+
+    //Reverts any changes made since last save
     public void Cancel()
     {
         saveColour = "#a9b7b8";
-        User.Generate(revertState);
+        _currentUser.Generate(revertState);
         // NavManager.NavigateTo("main");
     }
 }

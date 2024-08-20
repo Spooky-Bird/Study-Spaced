@@ -1,12 +1,13 @@
 ﻿@inject NavigationManager NavManager
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject User _currentUser
 
 <header>
     <button @onclick="navMain" class="title"><h1>Study</h1> <h1 style="color: #987acd">Spaced</h1></button>
     <!--REPLACE WITH NAV BAR-->
     @if (!NavManager.Uri.Contains("profile"))  {
         <div style="width: 80px;height: 80px;float: right;margin-right: 94px; padding:15px">
-            <div @onclick="navProfile" style="border-radius:100px; width:50px; height:50px; background-image: url(@User.pfpUrl); background-repeat: no-repeat; background-size: cover; cursor:pointer"></div>
+            <div @onclick="navProfile" style="border-radius:100px; width:50px; height:50px; background-image: url(@_currentUser.pfpUrl); background-repeat: no-repeat; background-size: cover; cursor:pointer"></div>
         </div>
     }
     <!--  -->
@@ -53,15 +54,15 @@
     public async Task navLogIn()
     {
         await localStorage.SetItemAsync("LoginId", "");
-        User.clear();
+        _currentUser.clear();
         NavManager.NavigateTo("");
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
         // if (!firstRender)
         //     return;
-        if (User.userId == "")
+        if (_currentUser.userId == "")
         {
             NavManager.NavigateTo("");
         }

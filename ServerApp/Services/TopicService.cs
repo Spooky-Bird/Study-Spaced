@@ -12,10 +12,12 @@ namespace ServerApp.Services
 	{
 		public readonly DynamoDBContext DbContext;
         public AmazonDynamoDBClient DynamoClient;
+		public User _currentUser;
 		//Initialises the connection to the user dataase hosted on AWS DynamoDB
-		public TopicService()
+		public TopicService(User user)
 		{
-			var awsCredentials = new Amazon.Runtime.BasicAWSCredentials("AKIA4MTWG6LQHO536SWH", "GDDcWwvn6BN0iijtf3YGnCP/oH+mZZefZyXFYNuw");
+			_currentUser = user;
+			var awsCredentials = new Amazon.Runtime.BasicAWSCredentials(Environment.GetEnvironmentVariable("Access"), Environment.GetEnvironmentVariable("Secret"));
 			AmazonDynamoDBClient DynamoClient = new AmazonDynamoDBClient(awsCredentials, Amazon.RegionEndpoint.APSoutheast2);
 
 			DbContext = new DynamoDBContext(DynamoClient, new DynamoDBContextConfig
@@ -35,11 +37,11 @@ namespace ServerApp.Services
 		//Uses Query method to retrieve all topics for a specifc user
 		public List<Topic> GetAllTasks()
 		{
-			IEnumerable<TopicModel> topics = DbContext.QueryAsync<TopicModel>(User.userId).GetRemainingAsync().Result;
+			IEnumerable<TopicModel> topics = DbContext.QueryAsync<TopicModel>(_currentUser.userId).GetRemainingAsync().Result;
             List<Topic> allTopics = new List<Topic>();
             foreach (TopicModel topic in topics)
             {
-                allTopics.Add(new Topic(topic));
+                allTopics.Add(new Topic(topic, _currentUser));
             }
             return allTopics;
 		}
@@ -47,7 +49,7 @@ namespace ServerApp.Services
         //Uses Query method to retrieve all topics for a specifc user
         public List<Topic>[] GetTasks()
 		{
-			List<TopicModel> topics = DbContext.QueryAsync<TopicModel>(User.userId).GetRemainingAsync().Result;
+			List<TopicModel> topics = DbContext.QueryAsync<TopicModel>(_currentUser.userId).GetRemainingAsync().Result;
 			List<Topic> dueTopics = new List<Topic>();
 			List<Topic> allTopics = new List<Topic>();
 			foreach(TopicModel topic in topics)
@@ -55,7 +57,7 @@ namespace ServerApp.Services
 				DateTime dueDate = DateTime.ParseExact((topic.dueDate), "yyyy/MM/dd", null);
 				if(dueDate <= DateTime.UtcNow.AddHours(10))
 				{
-					dueTopics.Add(new Topic(topic));
+					dueTopics.Add(new Topic(topic, _currentUser));
 				}
 				if(allTopics.Count() > 0)
 				{
@@ -63,17 +65,17 @@ namespace ServerApp.Services
                     {
                         if (allTopics[i].dueDate >= dueDate)
                         {
-                            allTopics.Insert(i, new Topic(topic));
+                            allTopics.Insert(i, new Topic(topic, _currentUser));
                             break;
                         }                           
                     }
-					if(!allTopics.Contains(new Topic(topic)))
+					if(!allTopics.Contains(new Topic(topic, _currentUser)))
 					{
-                        allTopics.Add(new Topic(topic));
+                        allTopics.Add(new Topic(topic, _currentUser));
                     }
                 }
 				else
-					allTopics.Add(new Topic(topic));
+					allTopics.Add(new Topic(topic, _currentUser));
 			}
 
 			return new List<Topic>[] { dueTopics, allTopics };
@@ -87,10 +89,19 @@ namespace ServerApp.Services
 			List<string> rangeValues = new List<string>() { (topicId) };
 
 			//Gets topic from topic database to remove
-            TopicModel topic = DbContext.QueryAsync<TopicModel>(User.userId, Amazon.DynamoDBv2.DocumentModel.QueryOperator.Equal, rangeValues).GetRemainingAsync().Result.ToList()[0];
+            TopicModel topic = DbContext.QueryAsync<TopicModel>(_currentUser.userId, Amazon.DynamoDBv2.DocumentModel.QueryOperator.Equal, rangeValues).GetRemainingAsync().Result.ToList()[0];
 			
 			//Removes topic
 			DbContext.DeleteAsync<TopicModel>(topic);
+		}
+
+		public void clearTopics()
+		{
+			List<TopicModel> topics = DbContext.QueryAsync<TopicModel>(_currentUser.userId).GetRemainingAsync().Result;
+			foreach(TopicModel topic in topics)
+			{
+				DeleteTopic(topic.topicId);
+			}
 		}
 
 		public async Task fullBackup()
