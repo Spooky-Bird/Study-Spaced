@@ -9,50 +9,52 @@
 <link href="_content/Syncfusion.Blazor/styles/bootstrap.css" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans" rel="stylesheet">
 <NavBar></NavBar>
+@if (_currentUser.userId != "")
+{
+    <div class="profile" style="height:465px;">
+        <h1>Settings</h1>
+        <ul style="margin-left:2rem; margin-top:20px">
+            <li style="float:left; margin-top:0px; margin-right:2rem;">
+                <div>
+                    <h2>Set intervals</h2>
+                    <p style="float:left;width: 101px;">Max deviation</p>
+                    <input type="number" min="0" style="width:100px; right: 1rem; margin-left: 1rem; color:@deviationState" placeholder="@revertState.deviation day(s)" @onchange="(ChangeEventArgs args) => RandomChanged(args)" />
 
-<div class="profile" style="height:465px;">
-    <h1>Settings</h1>
-    <ul style="margin-left:2rem; margin-top:20px">
-        <li style="float:left; margin-top:0px; margin-right:2rem;">
-            <div>
-                <h2>Set intervals</h2>
-                <p style="float:left;width: 100px;">Max deviation</p>
-                <input type="number" min="0" style="width:100px; right: 1rem; margin-left: 1rem; color:@deviationState" placeholder="@revertState.deviation.ToString() day(s)" @onchange="(ChangeEventArgs args) => RandomChanged(args)" />
+                    @foreach(var (interval, index) in _currentUser.intervals.WithIndex())
+                    {   
+                        <div>
+                            <p style="float:left;width: 100px;">Interval @(index + 1)</p>
+                            <input type="number" min="1" style="width:100px; right: 1rem; margin-left: 1rem; color:@delayStates[index]" placeholder="@delayPlaceholders[index] day(s)" @onchange="(ChangeEventArgs args) => DelayChanged(args, index)" />
+                            <input type="number" min="1" style="width:100px; right: 1rem; color:@durationStates[index]" placeholder="@durationPlaceholders[index] min(s)" @onchange="(ChangeEventArgs args) => DurationChanged(args, index)" />
+                            <p class="delSub" @onclick="() => RemoveInterval(interval)">⨉</p>
+                        </div>
+                    }
+                    <div><p style="color:@addIntervalColour; text-decoration:underline; cursor:pointer" @onclick="AddInterval">+ Add interval</p></div>
+                </div>
+            </li>
+            <li>
+                <div style="width: fit-content;display: inline-block;">
+                    <h2>Subjects</h2>
+                    @foreach (var (subject, index) in _currentUser.subjects.WithIndex())
+                    {
+                        <div>
+                            <input type="text" maxlength="20" style="float:left; width: 200px; border:none; color:@subjectStates[index]" placeholder="@subjectPlaceholders[index]" @onchange="(ChangeEventArgs args) => updateSubject(args, subject, index)" @oninput='(ChangeEventArgs args) => {subjectStates[index] = !_currentUser.subjects.Select(x => x.name).Contains(args.Value.ToString()) ? ErrorState.Clear : "red"; }'>
+                            <input type="color" @bind-value="@subject.colour" class="cPick" style="background-color:@subject.colour" @oninput="settingChanged">
+                            <p class="delSub" @onclick="() => removeSubject(subject)">⨉</p></div>
 
-                @foreach(var (interval, index) in _currentUser.intervals.WithIndex())
-                {   
-                    <div>
-                        <p style="float:left;width: 100px;">Interval @(index + 1)</p>
-                        <input type="number" min="1" style="width:100px; right: 1rem; margin-left: 1rem; color:@delayStates[index]" placeholder="@delayPlaceholders[index] day(s)" @onchange="(ChangeEventArgs args) => DelayChanged(args, index)" />
-                        <input type="number" min="1" style="width:100px; right: 1rem; color:@durationStates[index]" placeholder="@durationPlaceholders[index] min(s)" @onchange="(ChangeEventArgs args) => DurationChanged(args, index)" />
-                        <p class="delSub" @onclick="() => RemoveInterval(interval)">⨉</p>
-                    </div>
-                }
-                <div><p style="color:@addIntervalColour; text-decoration:underline; cursor:pointer" @onclick="AddInterval">+ Add interval</p></div>
-            </div>
-        </li>
-        <li>
-            <div style="width: fit-content;display: inline-block;">
-                <h2>Subjects</h2>
-                @foreach (var (subject, index) in _currentUser.subjects.WithIndex())
-                {
-                    <div>
-                        <input type="text" maxlength="20" style="float:left; width: 200px; border:none; color:@subjectStates[index]" placeholder="@subjectPlaceholders[index]" @onchange="(ChangeEventArgs args) => updateSubject(args, subject, index)" @oninput='(ChangeEventArgs args) => {subjectStates[index] = !_currentUser.subjects.Select(x => x.name).Contains(args.Value.ToString()) ? ErrorState.Clear : "red"; }'>
-                        <input type="color" @bind-value="@subject.colour" class="cPick" style="background-color:@subject.colour" @oninput="settingChanged">
-                        <p class="delSub" @onclick="() => removeSubject(subject)">⨉</p></div>
+                    }
+                    <div><p style="color:@addSubjectColour; text-decoration:underline; cursor:pointer" @onclick="AddSubject">+ Add Subject</p></div>
+                </div>
+            </li>
+        </ul>
+        <div style="width:730px;bottom: 380px;right: 580px;position: absolute;">
+            <button class="delacc" @onclick="deleteAccount">Delete Account</button>
 
-                }
-                <div><p style="color:@addSubjectColour; text-decoration:underline; cursor:pointer" @onclick="AddSubject">+ Add Subject</p></div>
-            </div>
-        </li>
-    </ul>
-    <div style="width:730px;bottom: 380px;right: 580px;position: absolute;">
-        <button class="delacc" @onclick="deleteAccount">Delete Account</button>
-
-        <button class="logIn" @onclick="updateUser" style="font-size: 1rem; width: fit-content;margin-top:1rem; background-color:@saveColour; border-color:@saveColour">Save</button>
-        <button class="signUp" @onclick="Cancel" style="font-size: 1rem;width: fit-content;margin-right: 1rem;margin-top:1rem; border-width:0.2rem; color:@saveColour; border-color:@saveColour">Cancel</button>
+            <button class="logIn" @onclick="updateUser" style="font-size: 1rem; width: fit-content;margin-top:1rem; background-color:@saveColour; border-color:@saveColour">Save</button>
+            <button class="signUp" @onclick="Cancel" style="font-size: 1rem;width: fit-content;margin-right: 1rem;margin-top:1rem; border-width:0.2rem; color:@saveColour; border-color:@saveColour">Cancel</button>
+        </div>
     </div>
-</div>
+}
 
 @code {
     List<int> delayPlaceholders = new List<int>();
@@ -62,7 +64,7 @@
     List<string> delayStates = new List<string>();
     List<string> durationStates = new List<string>();
     string deviationState = ErrorState.Clear;
-    UserModel revertState;
+    UserModel revertState = new UserModel();
     string addSubjectColour = "#987acd";
     string addIntervalColour = "#987acd";
     string saveColour = "#a9b7b8";
