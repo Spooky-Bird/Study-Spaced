@@ -37,9 +37,7 @@ namespace ServerApp
 
                 Environment.SetEnvironmentVariable(parts[0], parts[1]);
             }
-
-
-            builder.Services.AddScoped<Env>();	
+	
 			builder.Services.AddScoped<User>();
             builder.Services.AddScoped<UserService>();
             builder.Services.AddScoped<TopicService>();
