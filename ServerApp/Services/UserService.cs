@@ -14,7 +14,7 @@ namespace ServerApp.Services
         public AmazonDynamoDBClient DynamoClient;
 		//Initialises the connection to the user dataase hosted on AWS DynamoDB
 
-		User _currentUser;
+		public User _currentUser;
 
 
         public UserService(User user)
@@ -62,10 +62,15 @@ namespace ServerApp.Services
 		{
 			DbContext.DeleteAsync<UserModel>(_currentUser.userId);
 		}
+
+		//Creates full backup of all users
         public async Task fullBackup()
         {
+			//Gets all users
             var conditions = new List<ScanCondition>();
             List<UserModel> table = await DbContext.ScanAsync<UserModel>(conditions).GetRemainingAsync();
+
+			//Saves all data to csv
             var csv = new StringBuilder();
             csv.AppendLine("UserId, Name, Email, Delays, Intervals, Deviation, Subject Names, Subject Colours");
             foreach (UserModel user in table)

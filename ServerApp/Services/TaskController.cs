@@ -28,7 +28,7 @@ namespace ServerApp.Services
         public List<string> links = new List<string>();
         public string link = "";
 
-        User _currentUser;
+        public User _currentUser;
 
         public TaskController(User user)
         {
@@ -180,6 +180,7 @@ namespace ServerApp.Services
             topicService.DeleteTopic(topic.id);
         }
 
+        //Deletes and replaces topic with current version
         public void updateTask(Topic task)
         {
             TopicService topicService = new TopicService(_currentUser);
@@ -187,18 +188,28 @@ namespace ServerApp.Services
             topicService.StoreTopic(task.Model());
         }
 
+        //Defines the interval until the next time the topic is presented to the user
         public int calculateInterval(int repetitions, int difficulty)
         {
             Random rand = new Random();
+            //Higher difficulty will reduce repetitions
+            //More difficult topics will be revised more often and for longer
             repetitions /= difficulty+1;
+
+            //If there are no more intervals defined for the current repetition
             if (repetitions >= _currentUser.intervals.Count())
+                //set interval to final interval ± 0-deviation
                 return Math.Abs(_currentUser.intervals[^1].delay + rand.Next(-_currentUser.deviation, 1 + _currentUser.deviation));
+            //If repetitions are past first inteval, apply random deviation
             if(repetitions > 1)
                 return Math.Abs(_currentUser.intervals[repetitions].delay + rand.Next(-_currentUser.deviation, 1 + _currentUser.deviation));
+
+            //Return interval with no deivation
             return _currentUser.intervals[repetitions].delay;
 
         }
 
+        //Wipes info from task edit / creation screen
         public void cancel()
         {
             try
@@ -221,13 +232,10 @@ namespace ServerApp.Services
             displayTaskEntry = false;
         }
 
-
-        public void addLink(bool isEditing)
+        //Enters link to topic object
+        public void addLink()
         {
-            if (isEditing)
-                currentTask.links.Insert(0, link);
-            else
-                currentTask.links.Insert(0,link);
+            currentTask.links.Insert(0,link);
             link = "";
         }
     }

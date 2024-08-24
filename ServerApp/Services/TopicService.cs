@@ -49,18 +49,25 @@ namespace ServerApp.Services
         //Uses Query method to retrieve all topics for a specifc user
         public List<Topic>[] GetTasks()
 		{
+			//Get all topics
 			List<TopicModel> topics = DbContext.QueryAsync<TopicModel>(_currentUser.userId).GetRemainingAsync().Result;
 			List<Topic> dueTopics = new List<Topic>();
 			List<Topic> allTopics = new List<Topic>();
+
 			foreach(TopicModel topic in topics)
 			{
+				//converts date string to datetime
 				DateTime dueDate = DateTime.ParseExact((topic.dueDate), "yyyy/MM/dd", null);
+
+				//If the topic is due, add to dueTopics list
 				if(dueDate <= DateTime.UtcNow.AddHours(10))
 				{
 					dueTopics.Add(new Topic(topic, _currentUser));
 				}
+
 				if(allTopics.Count() > 0)
 				{
+					//Places topic into topic list in chronological order
                     for (int i = 0; i < allTopics.Count(); i++)
                     {
                         if (allTopics[i].dueDate >= dueDate)
@@ -69,6 +76,7 @@ namespace ServerApp.Services
                             break;
                         }                           
                     }
+					//If topic is the latest chronologically, it is entered into the list here
 					if(!allTopics.Contains(new Topic(topic, _currentUser)))
 					{
                         allTopics.Add(new Topic(topic, _currentUser));
@@ -78,6 +86,7 @@ namespace ServerApp.Services
 					allTopics.Add(new Topic(topic, _currentUser));
 			}
 
+			//Returns both all topics and the due topics as seperate lists
 			return new List<Topic>[] { dueTopics, allTopics };
 		}
 
@@ -95,8 +104,11 @@ namespace ServerApp.Services
 			DbContext.DeleteAsync<TopicModel>(topic);
 		}
 
+
+		//Deletes all topics from a users account
 		public void clearTopics()
 		{
+			//Gets all topics
 			List<TopicModel> topics = DbContext.QueryAsync<TopicModel>(_currentUser.userId).GetRemainingAsync().Result;
 			foreach(TopicModel topic in topics)
 			{

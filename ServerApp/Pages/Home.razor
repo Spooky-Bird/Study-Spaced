@@ -173,8 +173,8 @@
                     <div style="    text-align: start;display: table-cell;vertical-align: middle; width: 24px;">
                         <i class="fa-solid fa-paperclip" style="position: relative;left: 6px;"></i>
                     </div>
-                <input type="url" @onblur="() => {linkDropDown = false;}" style="background-color:@linkState" @bind="_taskController.link" @oninput="() => {linkDropDown = true; linkState = ErrorState.Clear;}" @onkeyup="(KeyboardEventArgs args) => ifEnterPressed(args, false)" />
-                    <div style="cursor:pointer; float: right;background-color: #bfbfbf;width: 27px;height: 26px;float: right;display: inline;color: #495057;padding-left: 8px; font-weight:bold" @onclick="() => {if(verifyUrl(_taskController.link)) {_taskController.addLink(false); } else {linkState = ErrorState.Error; } }">
+                <input type="url" @onblur="() => {linkDropDown = false;}" style="background-color:@linkState" @bind="_taskController.link" @oninput="() => {linkDropDown = true; linkState = ErrorState.Clear;}" @onkeyup="(KeyboardEventArgs args) => ifEnterPressed(args)" />
+                    <div style="cursor:pointer; float: right;background-color: #bfbfbf;width: 27px;height: 26px;float: right;display: inline;color: #495057;padding-left: 8px; font-weight:bold" @onclick="() => {if(verifyUrl(_taskController.link)) {_taskController.addLink(); } else {linkState = ErrorState.Error; } }">
                         +
                     </div>
                 </div>
@@ -275,8 +275,8 @@
                 <div style="    text-align: start;display: table-cell;vertical-align: middle; width: 24px;">
                     <i class="fa-solid fa-paperclip" style="position: relative;left: 6px;"></i>
                 </div>
-                <input type="url" @bind="_taskController.link" @oninput="() => {linkDropDown = true;}" @onkeyup="(KeyboardEventArgs args) => ifEnterPressed(args, true)" />
-                <div style="cursor:pointer;float: right;background-color: #bfbfbf;width: 27px;height: 26px;float: right;display: inline;color: #495057;padding-left: 8px; font-weight:bold" @onclick="() => _taskController.addLink(true)">
+                <input type="url" @bind="_taskController.link" @oninput="() => {linkDropDown = true;}" @onkeyup="(KeyboardEventArgs args) => ifEnterPressed(args)" />
+                <div style="cursor:pointer;float: right;background-color: #bfbfbf;width: 27px;height: 26px;float: right;display: inline;color: #495057;padding-left: 8px; font-weight:bold" @onclick="() => _taskController.addLink()">
                     +
                 </div>
             </div>
@@ -445,7 +445,7 @@
     }
 
     //Submits link on enter
-    void ifEnterPressed(KeyboardEventArgs args, bool isEditing)
+    void ifEnterPressed(KeyboardEventArgs args)
     {
         //checks if keypress was 'Enter'
         if(args.Key == "Enter") {
@@ -457,7 +457,7 @@
                 return;
             }
             //if link is valid, adds link to user object
-            _taskController.addLink(isEditing);
+            _taskController.addLink();
         }
     }
 
