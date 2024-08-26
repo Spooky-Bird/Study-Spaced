@@ -1,4 +1,15 @@
-﻿
+﻿///**********************************************************************
+///Project: ServerApp
+///
+///Page: Home
+///Folder: Services
+///
+///Author: Simon Wunderlich
+///
+///Description
+///Controls topic interaction functionality
+///Including ui control, editing and submitting topics, and displaying information
+///**********************************************************************
 using Microsoft.AspNetCore.Components;
 using ServerApp.Pages;
 

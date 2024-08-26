@@ -1,4 +1,16 @@
-﻿using System.Reflection;
+﻿///**********************************************************************
+///Project: ServerApp
+///
+///Page: Home, Profile, Settings, Login
+///Folder: Services
+///
+///Author: Simon Wunderlich
+///
+///Description
+///Defines object to store all information for a user
+///Includes functionality to convert between a User and User Model and visa versa
+///**********************************************************************
+using System.Reflection;
 using System.Security.Cryptography;
 
 //Stores current users information

@@ -1,4 +1,16 @@
-﻿using Amazon.DynamoDBv2.DataModel;
+﻿///**********************************************************************
+///
+///Project: ServerApp
+///
+///Page: Home
+///Folder: Services
+///
+///Author: Simon Wunderlich
+///
+///Description
+///Object to be stored in amazon database
+///**********************************************************************
+using Amazon.DynamoDBv2.DataModel;
 
 namespace ServerApp.Services
 {

@@ -1,4 +1,17 @@
-﻿using Amazon.DynamoDBv2.DataModel;
+﻿///**********************************************************************
+///Project: ServerApp
+///
+///Page: Home
+///Folder: Services
+///
+///Author: Simon Wunderlich
+///
+///Description
+///API interface layer with DynamoDB topics table
+///Includes basic CRUD functionality
+///Includes option to get only due tasks
+///**********************************************************************
+using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2;
 using System.Text;
 

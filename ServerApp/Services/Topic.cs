@@ -1,4 +1,16 @@
-﻿namespace ServerApp.Services
+﻿///**********************************************************************
+///Project: ServerApp
+///
+///Page: Home
+///Folder: Services
+///
+///Author: Simon Wunderlich
+///
+///Description
+///Defines object to store all information for a topic
+///Includes functionality to convert between a Topic and Topic Model and visa versa
+///**********************************************************************
+namespace ServerApp.Services
 {
     public class Topic
     {

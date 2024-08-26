@@ -1,5 +1,17 @@
-﻿///Controls the user authentication process
+﻿///**********************************************************************
+///
+///Project: ServerApp
+///
+///Page: Login
+///Folder: Services
+///
+///Author: Simon Wunderlich
+///
+///Description
+///Controls the user authentication process
 ///Checks if user exists, if password is correct, and can then sign the user in
+///**********************************************************************
+
 
 namespace ServerApp.Services
 {

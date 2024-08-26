@@ -1,4 +1,16 @@
-﻿using Amazon.DynamoDBv2.DataModel;
+﻿///**********************************************************************
+///
+///Project: ServerApp
+///
+///Page: Home, Profile
+///Folder: Services
+///
+///Author: Simon Wunderlich
+///
+///Description
+///API interface layer with AWS S3 buckets. Used to handle user file and profile pictures
+///**********************************************************************
+using Amazon.DynamoDBv2.DataModel;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Spire.Doc;

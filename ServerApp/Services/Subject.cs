@@ -1,4 +1,16 @@
-﻿namespace ServerApp.Services
+﻿///**********************************************************************
+///
+///Project: ServerApp
+///
+///Page: Home, Settings
+///Folder: Services
+///
+///Author: Simon Wunderlich
+///
+///Description
+///Defines subject object, stores all necessary info for subject
+///**********************************************************************
+namespace ServerApp.Services
 {
     public class Subject
     {

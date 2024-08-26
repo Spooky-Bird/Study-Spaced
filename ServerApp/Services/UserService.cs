@@ -1,4 +1,17 @@
-﻿using Amazon.DynamoDBv2.DataModel;
+﻿///**********************************************************************
+///
+///Project: ServerApp
+///
+///Page: Login, Profile, Settings
+///Folder: Services
+///
+///Author: Simon Wunderlich
+///
+///Description
+///API interface layer with DynamoDB user table
+///Includes basic CRUD functionality
+///**********************************************************************
+using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2;
 using System.Text;
 

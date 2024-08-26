@@ -1,4 +1,16 @@
-﻿namespace ServerApp.Services
+﻿///**********************************************************************
+///
+///Project: ServerApp
+///
+///Page: Home,Settings
+///Folder: Services
+///
+///Author: Simon Wunderlich
+///
+///Description
+///Defines object representing the properties of an interval
+///**********************************************************************
+namespace ServerApp.Services
 {
     public class Interval
     {
