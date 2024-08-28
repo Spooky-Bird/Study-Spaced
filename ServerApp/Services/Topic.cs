@@ -55,7 +55,7 @@ namespace ServerApp.Services
                     string url = fileService.getUrl($"{_currentUser.userId}/{fileName}", "resource-storage-study-spaced").Result;
                     this.files.Add(fileName, url);
                 }
-                catch { }
+                catch { this.files.Add(fileName, ""); }
             }
             //create unique identifyer
             this.id = generateId();

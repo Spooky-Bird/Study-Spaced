@@ -108,7 +108,7 @@ namespace ServerApp.Services
 
             //Saves all uplodadeed
             FileService fileService = new FileService(_currentUser);
-            foreach (KeyValuePair<string, string> file in files)
+            foreach (KeyValuePair<string, string> file in currentTask.files)
             {
                 //Saves file to s3 database
                 fileService.saveFile($"wwwroot/TempFiles/{_currentUser.userId}/{file.Key}", file.Key, file.Value);
@@ -117,7 +117,7 @@ namespace ServerApp.Services
                 string url = fileService.getUrl($@"{_currentUser.userId}/{file.Key}", "resource-storage-study-spaced").Result;
 
                 //Adds file to topic list
-                topic.files.Add(file.Key, url);
+                topic.files[file.Key] =  url;
             }
 
             //Saves topic to database
@@ -189,6 +189,12 @@ namespace ServerApp.Services
             _currentUser.allTopics.Remove(topic);
             TopicService topicService = new TopicService(_currentUser);
             topicService.DeleteTopic(topic.id);
+
+            FileService fileService = new FileService(_currentUser);
+            for(int i = 0; i < topic.files.Count(); i++)
+            {
+                fileService.deleteFile(topic.files.Keys.ElementAt(i));
+            }
         }
 
         //Deletes and replaces topic with current version
