@@ -29,9 +29,9 @@ namespace ServerApp.Services
 		//Initialises the connection to the user dataase hosted on AWS DynamoDB
 		public TopicService(User user)
 		{
-			_currentUser = user;
 			var awsCredentials = new Amazon.Runtime.BasicAWSCredentials(Environment.GetEnvironmentVariable("Access"), Environment.GetEnvironmentVariable("Secret"));
 			AmazonDynamoDBClient DynamoClient = new AmazonDynamoDBClient(awsCredentials, Amazon.RegionEndpoint.APSoutheast2);
+			_currentUser = user;
 
 			DbContext = new DynamoDBContext(DynamoClient, new DynamoDBContextConfig
 			{
@@ -63,7 +63,15 @@ namespace ServerApp.Services
         public List<Topic>[] GetTasks()
 		{
 			//Get all topics
-			List<TopicModel> topics = DbContext.QueryAsync<TopicModel>(_currentUser.userId).GetRemainingAsync().Result;
+			List<TopicModel> topics = new();
+
+			try {
+				topics = DbContext.QueryAsync<TopicModel>(_currentUser.userId).GetRemainingAsync().Result;
+			} catch {
+				return new List<Topic>[] { new() { } };
+				};
+
+
 			List<Topic> dueTopics = new List<Topic>();
 			List<Topic> allTopics = new List<Topic>();
 
@@ -109,24 +117,30 @@ namespace ServerApp.Services
 		{
 			//Defines what items with specific range value to retrieve
 			List<string> rangeValues = new List<string>() { (topicId) };
-
-			//Gets topic from topic database to remove
-            TopicModel topic = DbContext.QueryAsync<TopicModel>(_currentUser.userId, Amazon.DynamoDBv2.DocumentModel.QueryOperator.Equal, rangeValues).GetRemainingAsync().Result.ToList()[0];
+			try
+			{
+				//Gets topic from topic database to remove
+				TopicModel topic = DbContext.QueryAsync<TopicModel>(_currentUser.userId, Amazon.DynamoDBv2.DocumentModel.QueryOperator.Equal, rangeValues).GetRemainingAsync().Result.ToList()[0];
 			
-			//Removes topic
-			DbContext.DeleteAsync<TopicModel>(topic);
+				//Removes topic
+				DbContext.DeleteAsync<TopicModel>(topic);
+			}catch { }
 		}
 
 
 		//Deletes all topics from a users account
 		public void clearTopics()
 		{
-			//Gets all topics
-			List<TopicModel> topics = DbContext.QueryAsync<TopicModel>(_currentUser.userId).GetRemainingAsync().Result;
-			foreach(TopicModel topic in topics)
+			try
 			{
-				DeleteTopic(topic.topicId);
+				//Gets all topics
+				List<TopicModel> topics = DbContext.QueryAsync<TopicModel>(_currentUser.userId).GetRemainingAsync().Result;
+				foreach(TopicModel topic in topics)
+				{
+					DeleteTopic(topic.topicId);
+				}
 			}
+			catch { }
 		}
 
 		public async Task fullBackup()

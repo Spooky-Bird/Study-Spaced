@@ -25,7 +25,7 @@ namespace ServerApp.Services
 	{
 		public readonly DynamoDBContext DbContext;
         public AmazonDynamoDBClient DynamoClient;
-		//Initialises the connection to the user dataase hosted on AWS DynamoDB
+		//Initialises the connection to the user database hosted on AWS DynamoDB
 
 		public User _currentUser;
 
