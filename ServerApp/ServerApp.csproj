@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
@@ -23,6 +23,10 @@
     <Folder Include="wwwroot\Backups\Files\" />
     <Folder Include="wwwroot\Backups\Users\" />
     <Folder Include="wwwroot\Backups\Topics\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\keys.env" />
   </ItemGroup>
 
 </Project>

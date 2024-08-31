@@ -12,7 +12,7 @@ namespace ServerApp
 		{
 			var builder = WebApplication.CreateBuilder(args);
 
-			// Add services to the container.
+			// Add services to the container.	
 			builder.Services.AddRazorPages();
 			builder.Services.AddServerSideBlazor();
 
@@ -21,22 +21,22 @@ namespace ServerApp
             Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("MzM2NTMxNUAzMjM2MmUzMDJlMzBXazR1cUtWVjZtQXF6VEJJaSs3R3VTZndVVXpCSkxVMFpvWllqaFlXSExvPQ==");
             builder.Services.AddScoped<HttpClient>();
 
-            string filePath = "keys.env";
-            if (!File.Exists(filePath))
-                return;
+			string filePath = @"wwwroot\keys.env";
+			if (!File.Exists(filePath))
+				return;
 
-            foreach (var line in File.ReadAllLines(filePath))
-            {
-                var parts = line.Split(
-                    '=',
-                    StringSplitOptions.RemoveEmptyEntries);
+			foreach (var line in File.ReadAllLines(filePath))
+			{
+				var parts = line.Split(
+					'=',
+					StringSplitOptions.RemoveEmptyEntries);
 
-                if (parts.Length != 2)
-                    continue;
+				if (parts.Length != 2)
+					continue;
 
-                Environment.SetEnvironmentVariable(parts[0], parts[1]);
-            }
-	
+				Environment.SetEnvironmentVariable(parts[0], parts[1]);
+			}
+
 			builder.Services.AddScoped<User>();
             builder.Services.AddScoped<UserService>();
             builder.Services.AddScoped<TopicService>();
@@ -44,6 +44,7 @@ namespace ServerApp
 			//builder.Services.AddScoped<UserModel>();
 			//builder.Services.AddScoped<TopicModel>();
 			builder.Services.AddScoped<TaskController>();
+
 
    //         builder.Services.AddCors(options =>
 			//{
