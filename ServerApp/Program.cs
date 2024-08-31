@@ -10,7 +10,6 @@ namespace ServerApp
 	{
 		public static void Main(string[] args)
 		{
-			var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 			var builder = WebApplication.CreateBuilder(args);
 
 			// Add services to the container.
@@ -42,8 +41,8 @@ namespace ServerApp
             builder.Services.AddScoped<UserService>();
             builder.Services.AddScoped<TopicService>();
 			builder.Services.AddScoped<FileService>();
-			builder.Services.AddScoped<UserModel>();
-			builder.Services.AddScoped<TopicModel>();
+			//builder.Services.AddScoped<UserModel>();
+			//builder.Services.AddScoped<TopicModel>();
 			builder.Services.AddScoped<TaskController>();
 
    //         builder.Services.AddCors(options =>

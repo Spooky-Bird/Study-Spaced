@@ -177,6 +177,8 @@
     //deletes given interval
     public void RemoveInterval(Interval interval)
     {
+        if (_currentUser.intervals.Count == 1)
+            return;
         settingChanged();
         //removes interval from user intervals
         _currentUser.intervals.Remove(interval);
@@ -343,5 +345,19 @@
         saveColour = "#a9b7b8";
         _currentUser.Generate(revertState);
         // NavManager.NavigateTo("main");
+
+        //Creates new lists for placeholders and error states for each input
+        delayPlaceholders = new();
+        durationPlaceholders = new();
+        subjectPlaceholders = new();
+        subjectStates = new();
+        delayStates = new();
+        durationStates = new();
+        delayPlaceholders.AddRange(_currentUser.intervals.Select(x => x.delay));
+        durationPlaceholders.AddRange(_currentUser.intervals.Select(x => x.duration));
+        subjectPlaceholders.AddRange(_currentUser.subjects.Select(x => x.name));
+        subjectStates.AddRange(_currentUser.subjects.Select(x => ErrorState.Clear));
+        delayStates.AddRange(_currentUser.intervals.Select(x => ErrorState.Clear));
+        durationStates.AddRange(_currentUser.intervals.Select(x => ErrorState.Clear));
     }
 }

@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<publishData>
+  <publishProfile
+    profileName="guoguoguo-001-site1 - Web Deploy"
+    publishMethod="MSDeploy"
+    publishUrl="https://win8130.site4now.net:8172/msdeploy.axd?site=guoguoguo-001-site1"
+    msdeploySite="guoguoguo-001-site1"
+    userName="guoguoguo-001"
+    userPWD=""
+    destinationAppUrl="http://guoguoguo-001-site1.etempurl.com/"
+    SQLServerDBConnectionString=""
+    mySQLDBConnectionString=""
+    />
+  <publishProfile
+    profileName="guoguoguo-001-site1 - FTP"
+    publishMethod="FTP"
+    publishUrl="ftp://win8130.site4now.net:21/ggg"
+    ftpPassiveMode="True"
+    userName="guoguoguo-001"
+    userPWD=""
+    destinationAppUrl="http://guoguoguo-001-site1.etempurl.com/"
+    SQLServerDBConnectionString=""
+    mySQLDBConnectionString=""
+    />
+</publishData>
