@@ -87,17 +87,23 @@ namespace ServerApp.Services
                 try { pfpUrl = fileService.getUrl(userId, "pfp-storage-study-spaced").Result; } catch { }
             subjects = new List<Subject>();
             //Generates new Subject objects from the provided strings for name and colour
-			for (int i = 0; i < (uModel.subjectNames).Split(";").Count(); i++)
-			{
-                if((uModel.subjectNames).Split(";")[i] != "")
-				    subjects.Add(new Subject((uModel.subjectNames).Split(";")[i], (uModel.subjectColours).Split(";")[i]));
-			}
+            if (uModel.subjectNames != null)
+            {
+                for (int i = 0; i < (uModel.subjectNames).Split(";").Count(); i++)
+			    {
+                    if ((uModel.subjectNames).Split(";")[i] != "")
+                        try { subjects.Add(new Subject((uModel.subjectNames).Split(";")[i], (uModel.subjectColours).Split(";")[i])); } catch { }
+			    }
+            }
 
             intervals = new List<Interval>();
             //Generates new interval objects from the provided strings for delay and duration
-            for (int i = 0; i < (uModel.intervals).Split(";").Count(); i++)
+            if(uModel.intervals != null)
             {
-                intervals.Add(new Interval(Int32.Parse((uModel.delays).Split(";")[i]), Int32.Parse((uModel.intervals).Split(";")[i])));
+                for (int i = 0; i < (uModel.intervals).Split(";").Count(); i++)
+                {
+                    try { intervals.Add(new Interval(Int32.Parse((uModel.delays).Split(";")[i]), Int32.Parse((uModel.intervals).Split(";")[i]))); } catch { }
+                }
             }
         }
 
