@@ -4,7 +4,6 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using ServerApp.Services;
 using ServerApp;
-using NuGet.Frameworks;
 
 
 namespace Testing
