@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="TempFiles\**" />
+    <Content Remove="TempFiles\**" />
+    <EmbeddedResource Remove="TempFiles\**" />
+    <None Remove="TempFiles\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AWSSDK.Core" Version="3.7.400.13" />
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.400.13" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.402.4" />
@@ -18,8 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Backups\Topics\" />
-    <Folder Include="TempFiles\" />
     <Folder Include="wwwroot\Backups\Files\" />
     <Folder Include="wwwroot\Backups\Users\" />
     <Folder Include="wwwroot\Backups\Topics\" />

@@ -131,7 +131,7 @@
         <div style="position:absolute;width: 100%;background-color:#2b2b2b;position: absolute;left: 0;top: 0;padding: 15px;color: white;width: 100%;">
             @if (_taskController.displayTaskEntry ) { <div class="h2" id="popupTitle">Add Task</div> } else {<div class="h2" id="popupTitle">Edit Task</div>}
         </div>
-        <input type="text" placeholder="Enter title" maxlength="20" class="username" style="float:left; font-size:1rem; margin-top:3rem; background-color:@nameState" @bind-value="@_taskController.currentTask.name" @onblur="() => {nameState = _taskController.currentTask.name.Length > 0 ? ErrorState.Clear : ErrorState.Error; }" @oninput="(ChangeEventArgs args) => {_taskController.currentTask.name = args.Value.ToString().Length > 0 ? args.Value.ToString() : _taskController.currentTask.name; nameState = ErrorState.Clear; }" />
+        <input type="text" placeholder="Enter title" maxlength="20" class="username" style="float:left; font-size:1rem; margin-top:3rem; background-color:@nameState" @bind-value="@_taskController.currentTask.name" @onblur="() => {nameState = _taskController.currentTask.name.Length > 0 ? ErrorState.Clear : ErrorState.Error; }" @oninput="() => {nameState = ErrorState.Clear; }" />
         <div style="margin-left:220px; margin-top: 53px;     width: 150px;overflow: hidden;text-wrap: nowrap; box-shadow: 0 0 5px 2px @subState; border-radius: 10px; padding:5px">
             @if (_taskController.selectedSubject.name == "NULL")
             {
@@ -225,98 +225,6 @@
             }
     </div>
     }
-
-@* TASK EDIT PAGE *@
-@if (false)
-{
-    <div class="addTaskDialouge">
-        <div style="position:absolute;width: 100%;background-color:#2b2b2b;position: absolute;left: 0;top: 0;padding: 15px;color: white;width: 100%;">
-            <div class="h2" id="popupTitle">Edit Task</div>
-        </div>
-        <input type="text" placeholder="Enter title" class="username" style="float:left; font-size:1rem; margin-top:3rem" @bind="_taskController.currentTask.name" />
-        <div class="subjectDropDown">
-            @if (_taskController.selectedSubject.name == "NULL")
-            {
-                <p @onclick="@(() => subjectDropDown = true)">Select a subject</p>
-            }
-            else
-            {
-                <div @onclick="@(() => subjectDropDown = true)">
-                    <div style="height:10px; width:10px; border-radius:50%; background-color:@_taskController.selectedSubject.colour; float:left; margin-top: 6px;margin-right: 10px;"></div>
-                    <p>@_taskController.selectedSubject.name</p>
-                </div>
-            }
-            @if (subjectDropDown)
-            {
-                <ul style="position: absolute;display: inline-grid;">
-                    @foreach (Subject subject in _currentUser.subjects)
-                    {
-                        <li class="subjectElement" @onclick="() => selectSuject(subject)">
-                            <div style="height:10px; width:10px; border-radius:50%; background-color:@subject.colour; float:left; margin-top: 6px;margin-right: 10px;"></div>
-                            <p>@subject.name</p>
-                        </li>
-                    }
-                    <li class="subjectElement" style="background-color:@newSubState">
-                        @if (!addSubject)
-                        {
-                            <p @onclick="addNewSubject" style="cursor:pointer">+ Add subject</p>
-                        }
-                        else
-                        {
-                            <input type="color" class="cPick" style="background-color:@newSubject.colour; float:left; height:10px; width:10px; margin-top: 6px;margin-right: 10px;" @bind-value="@newSubject.colour">
-                            <input type="text" style="border:none; float:left; background-color:@newSubState" @bind-value="@newSubject.name" />
-                            <p style="float:right; cursor:pointer; background-color:@newSubState" @onclick="addNewSubjectComplete">✔</p>
-                        }
-                    </li>
-                </ul>
-
-            }
-        </div>
-
-        <div style="position: absolute;left: 430px;top: 90px;">
-            <p>Difficulty: @_taskController.difficulty</p>
-            <div style="height: 10px;border-radius: 10px;overflow: hidden;">
-                <input type="range" class="difficultySlider" step="1" min="0" max="3" @bind-value="@_taskController.difficulty" TValue="int">
-            </div>
-        </div>
-        <div class="description"><input type="text" placeholder="Enter Description" style="font-size:1rem" @bind="_taskController.currentTask.description"></div>
-        <div style="width: fit-content;">Upload resources</div>
-        <div @onclick="() => {linkDropDown = false;}">
-            <div class="linkEntry">
-                <div style="    text-align: start;display: table-cell;vertical-align: middle; width: 24px;">
-                    <i class="fa-solid fa-paperclip" style="position: relative;left: 6px;"></i>
-                </div>
-                <input type="url" @bind="_taskController.link" @oninput="() => {linkDropDown = true;}" @onkeyup="(KeyboardEventArgs args) => ifEnterPressed(args)" />
-                <div style="cursor:pointer;float: right;background-color: #bfbfbf;width: 27px;height: 26px;float: right;display: inline;color: #495057;padding-left: 8px; font-weight:bold" @onclick="() => _taskController.addLink()">
-                    +
-                </div>
-            </div>
-            @if (linkDropDown)
-            {
-                <ul style="    background: #e6e6e6;     width: 622px; position:absolute;max-height: 150px;overflow-y: scroll;     z-index: 1;">
-                    @foreach (string url in _taskController.currentTask.links)
-                    {
-                        <li style="overflow: hidden;text-wrap: nowrap;text-overflow: ellipsis; padding: 10px; border-top: 1px solid #bfbfbf;">
-                            <p style="    overflow: hidden;width: 94%;text-overflow: ellipsis;overflow-wrap: break-word;float: left;position: relative;top: 3px;">
-                                @url
-                            </p>
-                            <p class="delSub" @onclick="() => {_taskController.currentTask.links.Remove(url);}">🗙</p>
-                        </li>
-                    }
-                </ul>
-            }
-        </div>
-        <ul style="height:153px; overflow-y:auto;">
-            <li>
-                <SfUploader AutoUpload="true">
-                    <UploaderEvents ValueChange="@OnChange" OnRemove="@OnRemoved"></UploaderEvents>
-                </SfUploader>
-            </li>
-        </ul>
-        <button class="signUp" style="width: fit-content;padding: 5px 10px;position: absolute;right: 120px;bottom:20px;border-radius: 0.4rem;font-size: 1rem;" @onclick="() => _taskController.cancel()">Cancel</button>
-        <button class="logIn" style="width: fit-content;padding: 5px 10px;position: absolute;right: 30px; bottom: 20px;border-radius: 0.4rem;font-size: 1rem; margin-bottom:0" @onclick="() => { Task.Run(() => confirmEdit());}">Confirm</button>
-    </div>
-}
 
 @if(_taskController.displayTaskHistory)
 {
