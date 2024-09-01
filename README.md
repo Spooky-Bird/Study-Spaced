@@ -1,7 +1,13 @@
+
 # Study Spaced
 
-Spaced repitition study tool 
+Spaced repitition study tool created for U3&4 Software Development
 
+
+## Display
+To ensure the program's ui displays correctly, please change your computers display settings as follows
+- Set display scale to 100%
+- Enable bookmarks bar on chrome
 
 ## View online
 
