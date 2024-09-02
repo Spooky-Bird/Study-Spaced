@@ -89,7 +89,7 @@
     public async Task deleteAccount()
     {
         //Deletes user profile from db
-        userService.DeleteUser();
+        userService.delete();
 
         //Deletes all user's topics
         topicService.clearTopics();
@@ -282,7 +282,7 @@
         if (deviationState == ("red"))
             return;
         //saves changes to user db
-        userService.StoreUser(_currentUser.Model());
+        userService.store(_currentUser.Model());
 
         //greys out save + cancel
         saveColour = "#a9b7b8";

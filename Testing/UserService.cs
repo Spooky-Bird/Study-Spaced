@@ -41,8 +41,8 @@ namespace Testing
         [TestMethod]
         public void loadUser()
         {
-            us.LoadUser("1nbZz5BYTc");
-            Assert.AreEqual(us._currentUser.userId, "1nbZz5BYTc");
+            us.LoadUser("Ts9CYgNvsY");
+            Assert.AreEqual(us._currentUser.userId, "Ts9CYgNvsY");
         }
 
         [TestMethod]
@@ -56,14 +56,14 @@ namespace Testing
         public void deleteUser()
         {
             us._currentUser.userId = "";
-            us.DeleteUser();
+            us.delete();
         }
 
         [TestMethod]
         public void storeUser()
         {
             us._currentUser.userId = "";
-            us.StoreUser(us._currentUser.Model());
+            us.store(us._currentUser.Model());
         }
     }
 }

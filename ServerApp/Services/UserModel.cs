@@ -10,12 +10,13 @@
 ///Object to be stored in amazon database
 ///**********************************************************************
 using Amazon.DynamoDBv2.DataModel;
+using ServerApp.Services;
 
 namespace ServerApp
 {
 	//Defines which table object should be entered in
 	[DynamoDBTable("UserTable")]
-	public class UserModel
+	public class UserModel : IModel
 	{
 		//Primary key, can be used to easily load objects
 		[DynamoDBHashKey]

@@ -53,14 +53,14 @@ namespace Testing
         [TestMethod] 
         public void deleteTopic()
         {
-            ts.DeleteTopic("");
+            ts.delete("");
         }
 
         [TestMethod]
         public void storeTopic()
         {
             Topic topic = new Topic("", new Subject("name", "#000000"), 0, 0, "fs", new List<string>(), new List<string>(), new User());
-            ts.StoreTopic(topic.Model());
+            ts.store(topic.Model());
         }
     }
 }

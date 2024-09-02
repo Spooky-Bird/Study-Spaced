@@ -398,7 +398,7 @@
         topic.links.Remove(link);
 
         //updates db
-        topicService.StoreTopic(topic.Model());
+        topicService.store(topic.Model());
     }
 
     //remove file from topic
@@ -411,7 +411,7 @@
         fileService.deleteFile(key);
 
         //updates topic db
-        topicService.StoreTopic(topic.Model());
+        topicService.store(topic.Model());
     }
 
     //Allows user to select subject from dropdown
@@ -438,7 +438,7 @@
             _currentUser.subjects.Add(newSubject);
 
             //updates db
-            userService.StoreUser(_currentUser.Model());
+            userService.store(_currentUser.Model());
             addSubject = false;
             newSubState = ErrorState.Clear;
         }

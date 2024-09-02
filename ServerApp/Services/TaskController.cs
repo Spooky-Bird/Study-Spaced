@@ -122,7 +122,7 @@ namespace ServerApp.Services
 
             //Saves topic to database
             TopicService topicService = new TopicService(_currentUser);
-            topicService.StoreTopic(topic.Model(topic.dueDate.ToString("yyyy/MM/dd")));
+            topicService.store(topic.Model(topic.dueDate.ToString("yyyy/MM/dd")));
 
             //Resets all variables
             selectedSubject = new Subject("NULL", "NULL");
@@ -143,7 +143,7 @@ namespace ServerApp.Services
 
             //Saves topic to database
             TopicService topicService = new TopicService(_currentUser);
-            topicService.StoreTopic(topic.Model(dueDate));
+            topicService.store(topic.Model(dueDate));
 
             //Saves topic to topic list
             _currentUser.allTopics.Add(topic);
@@ -179,7 +179,7 @@ namespace ServerApp.Services
             //Updates topic with updated values
             TopicService topicService = new TopicService(_currentUser);
             string dueDate = DateTime.Now.AddDays(calculateInterval(topic.repetitions, topic.difficulty)).ToString("yyyy/MM/dd");
-            topicService.StoreTopic(topic.Model(dueDate));
+            topicService.store(topic.Model(dueDate));
         }
 
         //Removes topic from topic list
@@ -188,7 +188,7 @@ namespace ServerApp.Services
             _currentUser.topics.Remove(topic);
             _currentUser.allTopics.Remove(topic);
             TopicService topicService = new TopicService(_currentUser);
-            topicService.DeleteTopic(topic.id);
+            topicService.delete(topic.id);
 
             FileService fileService = new FileService(_currentUser);
             for(int i = 0; i < topic.files.Count(); i++)
@@ -201,8 +201,8 @@ namespace ServerApp.Services
         public void updateTask(Topic task)
         {
             TopicService topicService = new TopicService(_currentUser);
-            topicService.DeleteTopic(task.id);
-            topicService.StoreTopic(task.Model());
+            topicService.delete(task.id);
+            topicService.store(task.Model());
         }
 
         //Defines the interval until the next time the topic is presented to the user

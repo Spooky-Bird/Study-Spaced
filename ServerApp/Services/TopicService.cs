@@ -21,29 +21,14 @@ using System.Text;
 
 namespace ServerApp.Services
 {
-	public class TopicService
+	public class TopicService : AWS, IAWS
 	{
-		public readonly DynamoDBContext DbContext;
-        public AmazonDynamoDBClient DynamoClient;
-		public User _currentUser;
-		//Initialises the connection to the user dataase hosted on AWS DynamoDB
-		public TopicService(User user)
-		{
-			var awsCredentials = new Amazon.Runtime.BasicAWSCredentials(Environment.GetEnvironmentVariable("Access"), Environment.GetEnvironmentVariable("Secret"));
-			AmazonDynamoDBClient DynamoClient = new AmazonDynamoDBClient(awsCredentials, Amazon.RegionEndpoint.APSoutheast2);
-			_currentUser = user;
-
-			DbContext = new DynamoDBContext(DynamoClient, new DynamoDBContextConfig
-			{
-				//Setting the Consistent property to true ensures that you'll always get the latest
-				ConsistentRead = true,
-				SkipVersionCheck = true
-			});
-		}
+		public TopicService(User user) : base(user) { }
 
 		//Stores a given topic to the topic database
-		public void StoreTopic(TopicModel model)
+		public void store(IModel model)
 		{
+			TopicModel _model = model as TopicModel;
 			DbContext.SaveAsync(model);
 		}
 
@@ -113,7 +98,7 @@ namespace ServerApp.Services
 
 
 		//Deletes topic by id
-		public void DeleteTopic(string topicId)
+		public void delete(string topicId)
 		{
 			//Defines what items with specific range value to retrieve
 			List<string> rangeValues = new List<string>() { (topicId) };
@@ -137,7 +122,7 @@ namespace ServerApp.Services
 				List<TopicModel> topics = DbContext.QueryAsync<TopicModel>(_currentUser.userId).GetRemainingAsync().Result;
 				foreach(TopicModel topic in topics)
 				{
-					DeleteTopic(topic.topicId);
+					delete(topic.topicId);
 				}
 			}
 			catch { }

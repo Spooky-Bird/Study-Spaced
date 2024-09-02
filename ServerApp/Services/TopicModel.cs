@@ -16,7 +16,7 @@ namespace ServerApp.Services
 {
     //Defines which table object should be entered in
     [DynamoDBTable("TaskTable")]
-    public class TopicModel
+    public class TopicModel : IModel
     {
         //Primary key, can be used to easily load objects
         [DynamoDBHashKey]

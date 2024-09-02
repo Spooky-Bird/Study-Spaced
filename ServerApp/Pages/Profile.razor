@@ -84,7 +84,7 @@
             fileService.savePfp($@"wwwroot\TempFiles\{_currentUser.userId}\pfp\" + fileName, fileName, contentType);
 
         //User object updated in db
-        userService.StoreUser(_currentUser.Model());
+        userService.store(_currentUser.Model());
 
         //Updates revert state so it will revert to updated state on cancel
         revertState = _currentUser.Model();

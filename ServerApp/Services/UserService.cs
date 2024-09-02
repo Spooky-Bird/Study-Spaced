@@ -21,32 +21,15 @@ using System.Text;
 
 namespace ServerApp.Services
 {
-	public class UserService
+	public class UserService : AWS, IAWS 
 	{
-		public readonly DynamoDBContext DbContext;
-        public AmazonDynamoDBClient DynamoClient;
-		//Initialises the connection to the user database hosted on AWS DynamoDB
-
-		public User _currentUser;
-
-
-        public UserService(User user)
-		{
-			var awsCredentials = new Amazon.Runtime.BasicAWSCredentials(Environment.GetEnvironmentVariable("Access"), Environment.GetEnvironmentVariable("Secret"));
-			AmazonDynamoDBClient DynamoClient = new AmazonDynamoDBClient(awsCredentials, Amazon.RegionEndpoint.APSoutheast2);
-			_currentUser = user;
-			DbContext = new DynamoDBContext(DynamoClient, new DynamoDBContextConfig
-			{
-				//Setting the Consistent property to true ensures that you'll always get the latest
-				ConsistentRead = true,
-				SkipVersionCheck = true
-			});
-		}
+        public UserService(User user) :base(user){}
 
 		//Stores a given userModel to user database
-		public void StoreUser(UserModel model)
+		public void store(IModel model)
 		{
-			DbContext.SaveAsync(model);
+			UserModel _model = model as UserModel;
+			DbContext.SaveAsync(_model);
 		}
 
 		//Uses Scan method to retrieve all accounts with a given username in a list of UserModels
@@ -71,7 +54,7 @@ namespace ServerApp.Services
 		}
 
 		//Deletes user by id
-		public void DeleteUser()
+		public void delete(string key= null)
 		{
 			DbContext.DeleteAsync<UserModel>(_currentUser.userId);
 		}
